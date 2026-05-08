@@ -239,3 +239,38 @@
 - 保存UIの実装。
 - ゲスト履歴のログインユーザー保存への移行。
 - ランキング生成・管理機能。
+
+## 16. Issue #35 実装方針（ランキング公開データ基盤）
+
+### 16.1 公開ランキングテーブルの分離
+- テーブル名: `ranking_public_entries`。
+- `user_saved_results`（個人保存）とは物理的に分離し、個人保存データをそのまま公開しない。
+- 1レコードは1件のランキング投稿公開データを表す。
+
+### 16.2 公開対象カラム
+- `display_name`（表示名または匿名表示名）
+- `is_anonymous`（匿名表示フラグ）
+- `result_kind`（結果種別）
+- `role`（ロール）
+- `equipment_type`（装備タイプ）
+- `score_total`（スコア）
+- `score_rank`（ランク）
+- `payload_snapshot`（公開可能な最小スナップショット）
+- `created_at`（投稿作成日時）
+
+### 16.3 非公開情報の取り扱い
+- `ranking_public_entries` には email / access token / secret / password / 内部識別子（`user_id`等）を `payload_snapshot` に含めない。
+- DB制約とカラムコメントで「公開不可情報を保存しない」方針を明示する。
+- 収集最小化の原則に従い、ランキング表示に不要なPIIは保存対象外とする。
+
+### 16.4 RLS方針
+- `SELECT`: 公開ランキング閲覧のため、未ログインを含む全ユーザーに許可。
+- `INSERT`: 認証済みユーザーが `auth.uid() = user_id` の自分の投稿のみ作成可能。
+- `DELETE`: 認証済みユーザーが `auth.uid() = user_id` の自分の投稿のみ削除可能。
+- `UPDATE`: 今回は許可しない（再投稿での更新を前提にし、改ざん経路を最小化）。
+
+### 16.5 将来UI向けインデックス
+- 並び順用: `result_kind + score_total DESC + created_at DESC`。
+- 絞り込み用: `role + equipment_type + score_rank`。
+- マイ投稿管理用: `user_id + created_at DESC`。
+- これにより次PRでランキング投稿UI/一覧UIを実装しやすい土台を先に整備する。
