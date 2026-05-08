@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { AppFooter } from './AppFooter';
 import { AppHeader } from './AppHeader';
 import { GlobalNav } from '@/components/navigation/GlobalNav';
+import { AuthProvider } from '@/features/auth/AuthProvider';
 
 type AppShellProps = {
   children: ReactNode;
@@ -9,7 +10,8 @@ type AppShellProps = {
 
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-transparent">
+    <AuthProvider>
+      <div className="flex min-h-screen flex-col bg-transparent">
       <AppHeader />
       <div className="mx-auto flex w-full max-w-7xl flex-1 gap-6 px-4 py-6 md:py-8 lg:gap-8">
         <aside className="hidden lg:sticky lg:top-24 lg:block lg:h-fit lg:w-64">
@@ -21,6 +23,7 @@ export function AppShell({ children }: AppShellProps) {
         <main className="min-w-0 flex-1">{children}</main>
       </div>
       <AppFooter />
-    </div>
+      </div>
+    </AuthProvider>
   );
 }
