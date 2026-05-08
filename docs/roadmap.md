@@ -14,6 +14,7 @@
 - コンポーネント設計
 - データモデル設計
 - 認証/権限設計
+- データモデル/認証・権限の基本設計（Issue #4 で初版定義）
 
 ## Phase 3: 詳細設計
 - API仕様
@@ -64,3 +65,8 @@
 ## Phase 2 補足（Issue #3 完了事項）
 - スコア計算モデル詳細設計（式・重み・閾値・優先順位）を `docs/scoring-spec.md` に確定。
 - 次工程では本仕様を基準に API/バリデーション/テスト詳細へ展開する。
+
+## Phase 2 補足（Issue #4 完了事項）
+- Supabase 前提の DB・認証・権限モデルを `docs/data-design.md` に初版確定。
+- 管理画面ロール（admin/editor/viewer）と RLS 境界を `docs/admin-requirements.md` に反映。
+- 次工程では Supabase schema / RLS policy / Auth 設定の詳細設計へ展開する。
