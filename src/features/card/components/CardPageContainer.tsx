@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { NeonPanel } from '@/components/ui/NeonPanel';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { calculateBuildScore } from '@/lib/score';
@@ -14,6 +14,10 @@ const SLOT_LABELS: Record<SlotType, string> = { cartridge: 'カートリッジ',
 const ROLE_OPTIONS = [{ id: 'dps', label: 'DPS' }, { id: 'support', label: 'サポート' }];
 const STAT_KEYS = Object.keys(sampleScoreConfig.statRanges) as StatKey[];
 
+function listCardHistory(): GuestHistoryEntry[] {
+  return listGuestHistory().filter((entry) => entry.kind === 'card');
+}
+
 export function CardPageContainer() {
   const [characterName, setCharacterName] = useState('');
   const [roleId, setRoleId] = useState('dps');
@@ -23,7 +27,7 @@ export function CardPageContainer() {
   const [subStats, setSubStats] = useState(Array.from({ length: 3 }, () => ({ key: STAT_KEYS[0], value: '' })));
   const [comment, setComment] = useState('');
   const [saveState, setSaveState] = useState<'idle'|'saving'|'success'|'error'>('idle');
-  const [history, setHistory] = useState<GuestHistoryEntry[]>([]);
+  const [history, setHistory] = useState<GuestHistoryEntry[]>(() => listCardHistory());
   const [historySaveStatus, setHistorySaveStatus] = useState<'idle'|'success'>('idle');
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -53,10 +57,6 @@ export function CardPageContainer() {
   }, [errors.length, mainStatKey, mainStatValue, roleId, slot, subStats]);
 
   const createdAt = useMemo(() => new Date().toLocaleString('ja-JP'), []);
-
-  useEffect(() => {
-    setHistory(listGuestHistory().filter((entry) => entry.kind === 'card'));
-  }, []);
 
   const handleSave = async () => {
     if (!previewRef.current) return;
