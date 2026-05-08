@@ -1,8 +1,5 @@
+import { EmptyStatePage } from '@/components/page/EmptyStatePage';
+
 export default function CardPage() {
-  return (
-    <section>
-      <h1 className="text-2xl font-bold">card</h1>
-      <p>card ページの骨組みです。</p>
-    </section>
-  );
+  return <EmptyStatePage title="ビルドカード生成" subtitle="共有用カード生成のための空状態です。" badge="SCR-004" />;
 }
