@@ -1,11 +1,13 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { NeonPanel } from '@/components/ui/NeonPanel';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { calculateBuildScore } from '@/lib/score';
 import { sampleScoreConfig } from '@/lib/score/sampleConfig';
 import type { SlotType, StatKey } from '@/lib/score/types';
+import { deleteGuestHistory, listGuestHistory, saveGuestHistory } from '@/features/history/storage';
+import type { GuestHistoryEntry } from '@/features/history/types';
 import { exportElementToPng } from '../lib/cardImage';
 
 const SLOT_LABELS: Record<SlotType, string> = { cartridge: 'カートリッジ', module: 'モジュール', gear: 'ギア', console: 'コンソール' };
@@ -21,6 +23,8 @@ export function CardPageContainer() {
   const [subStats, setSubStats] = useState(Array.from({ length: 3 }, () => ({ key: STAT_KEYS[0], value: '' })));
   const [comment, setComment] = useState('');
   const [saveState, setSaveState] = useState<'idle'|'saving'|'success'|'error'>('idle');
+  const [history, setHistory] = useState<GuestHistoryEntry[]>([]);
+  const [historySaveStatus, setHistorySaveStatus] = useState<'idle'|'success'>('idle');
   const previewRef = useRef<HTMLDivElement>(null);
 
   const errors = useMemo(() => {
@@ -50,6 +54,10 @@ export function CardPageContainer() {
 
   const createdAt = useMemo(() => new Date().toLocaleString('ja-JP'), []);
 
+  useEffect(() => {
+    setHistory(listGuestHistory().filter((entry) => entry.kind === 'card'));
+  }, []);
+
   const handleSave = async () => {
     if (!previewRef.current) return;
     setSaveState('saving');
@@ -59,6 +67,34 @@ export function CardPageContainer() {
     } catch {
       setSaveState('error');
     }
+  };
+
+  const handleSaveHistory = () => {
+    if (!result) return;
+    const mainValue = Number(mainStatValue);
+    if (Number.isNaN(mainValue)) return;
+    const parsedSubStats = subStats.filter((s) => s.value.trim().length > 0).map((s) => ({ key: s.key, value: Number(s.value) })).filter((s) => !Number.isNaN(s.value));
+    const next = saveGuestHistory({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      kind: 'card',
+      createdAt: new Date().toISOString(),
+      payload: {
+        roleId,
+        slot,
+        mainStatKey,
+        mainStatValue: mainValue,
+        subStats: parsedSubStats,
+        score: result.buildScoreNormalized,
+        rank: result.rank,
+      },
+    });
+    setHistory(next.filter((entry) => entry.kind === 'card'));
+    setHistorySaveStatus('success');
+  };
+
+  const handleDeleteHistory = (id: string) => {
+    const next = deleteGuestHistory(id);
+    setHistory(next.filter((entry) => entry.kind === 'card'));
   };
 
   return <div className="space-y-6">
@@ -74,8 +110,18 @@ export function CardPageContainer() {
         <label className="block text-sm">コメント<textarea className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" rows={3} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="自由入力" /></label>
         {errors.length > 0 && <ul className="list-disc pl-5 text-sm text-[var(--color-danger)]">{errors.map((error) => <li key={error}>{error}</li>)}</ul>}
         <button type="button" className="rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:border-[var(--color-accent)] disabled:opacity-50" onClick={handleSave} disabled={!result || saveState === 'saving'}>PNGで保存</button>
+        <button type="button" className="ml-2 rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:border-[var(--color-accent)] disabled:opacity-50" onClick={handleSaveHistory} disabled={!result}>入力結果を履歴保存</button>
         {saveState === 'success' && <p className="text-xs text-[var(--color-accent)]">PNG保存を開始しました。</p>}
         {saveState === 'error' && <p className="text-xs text-[var(--color-danger)]">PNG保存に失敗しました。</p>}
+        {historySaveStatus === 'success' && <p className="text-xs text-[var(--color-accent)]">履歴に保存しました（最大20件）。</p>}
+        <div>
+          <p className="mb-1 text-sm font-medium">保存済み履歴</p>
+          {history.length === 0 ? <p className="text-xs text-[var(--color-text-secondary)]">履歴はありません。</p> : (
+            <ul className="space-y-2">
+              {history.map((entry) => <li key={entry.id} className="rounded-md border border-[var(--color-border)] p-2 text-xs"><p>{new Date(entry.createdAt).toLocaleString('ja-JP')} / {SLOT_LABELS[entry.payload.slot]} / {entry.payload.mainStatKey}:{entry.payload.mainStatValue}</p><p>スコア: {entry.payload.score.toFixed(2)} / ランク: {entry.payload.rank}</p><button type="button" className="mt-1 underline" onClick={() => handleDeleteHistory(entry.id)}>削除</button></li>)}
+            </ul>
+          )}
+        </div>
       </NeonPanel>
 
       <NeonPanel className="overflow-hidden">

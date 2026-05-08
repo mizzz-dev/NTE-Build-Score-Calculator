@@ -7,6 +7,8 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { calculateBuildScore } from '@/lib/score';
 import { sampleScoreConfig } from '@/lib/score/sampleConfig';
 import type { SlotType, StatKey } from '@/lib/score/types';
+import { deleteGuestHistory, listGuestHistory, saveGuestHistory } from '@/features/history/storage';
+import type { GuestHistoryEntry } from '@/features/history/types';
 import { fromShareQuery, SHARE_SUB_STAT_COUNT, toShareQuery } from '../share/mapper';
 import type { ScoreShareState } from '../share/types';
 
@@ -50,6 +52,12 @@ export function ScorePageContainer() {
   const [mainStatValue, setMainStatValue] = useState<string>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).mainStatValue);
   const [subStats, setSubStats] = useState<Array<{ key: StatKey; value: string }>>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).subStats);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [history, setHistory] = useState<GuestHistoryEntry[]>([]);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
+
+  useEffect(() => {
+    setHistory(listGuestHistory().filter((entry) => entry.kind === 'score'));
+  }, []);
 
   const shareState = useMemo<ScoreShareState>(() => ({ roleId, characterId, slot, mainStatKey, mainStatValue, subStats }), [roleId, characterId, slot, mainStatKey, mainStatValue, subStats]);
 
@@ -74,6 +82,39 @@ export function ScorePageContainer() {
       setCopyStatus('error');
     }
   }, [shareUrl]);
+
+  const handleSaveHistory = useCallback(() => {
+    if (!result) return;
+    const mainValue = Number(mainStatValue);
+    if (Number.isNaN(mainValue)) return;
+    const parsedSubStats = subStats
+      .filter((sub) => sub.value.trim().length > 0)
+      .map((sub) => ({ key: sub.key, value: Number(sub.value) }))
+      .filter((sub) => !Number.isNaN(sub.value));
+
+    const next = saveGuestHistory({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      kind: 'score',
+      createdAt: new Date().toISOString(),
+      payload: {
+        roleId,
+        characterId: characterId || undefined,
+        slot,
+        mainStatKey,
+        mainStatValue: mainValue,
+        subStats: parsedSubStats,
+        score: result.buildScoreNormalized,
+        rank: result.rank,
+      },
+    });
+    setHistory(next.filter((entry) => entry.kind === 'score'));
+    setSaveStatus('success');
+  }, [characterId, mainStatKey, mainStatValue, result, roleId, slot, subStats]);
+
+  const handleDeleteHistory = useCallback((id: string) => {
+    const next = deleteGuestHistory(id);
+    setHistory(next.filter((entry) => entry.kind === 'score'));
+  }, []);
 
   const errors = useMemo(() => {
     const next: string[] = [];
@@ -198,6 +239,12 @@ export function ScorePageContainer() {
             <p>効果: {result ? result.equipmentScoresBySlot[slot].equipmentEffectScore.toFixed(2) : '--'}</p>
           </div>
           <div>
+            <button type="button" className="rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:border-[var(--color-accent)] disabled:opacity-50" onClick={handleSaveHistory} disabled={!result}>
+              この結果を履歴保存
+            </button>
+            {saveStatus === 'success' && <p className="mt-1 text-xs text-[var(--color-accent)]">履歴に保存しました（最大20件）。</p>}
+          </div>
+          <div>
             <p className="mb-1 text-sm font-medium">警告</p>
             {result && result.warnings.length > 0 ? (
               <ul className="list-disc space-y-1 pl-5 text-xs text-[var(--color-danger)]">
@@ -205,6 +252,22 @@ export function ScorePageContainer() {
               </ul>
             ) : (
               <p className="text-xs text-[var(--color-text-secondary)]">警告はありません。</p>
+            )}
+          </div>
+          <div>
+            <p className="mb-1 text-sm font-medium">保存済み履歴</p>
+            {history.length === 0 ? (
+              <p className="text-xs text-[var(--color-text-secondary)]">履歴はありません。</p>
+            ) : (
+              <ul className="space-y-2">
+                {history.map((entry) => (
+                  <li key={entry.id} className="rounded-md border border-[var(--color-border)] p-2 text-xs">
+                    <p>{new Date(entry.createdAt).toLocaleString('ja-JP')} / {SLOT_LABELS[entry.payload.slot]} / {entry.payload.mainStatKey}:{entry.payload.mainStatValue}</p>
+                    <p>スコア: {entry.payload.score.toFixed(2)} / ランク: {entry.payload.rank}</p>
+                    <button type="button" className="mt-1 underline" onClick={() => handleDeleteHistory(entry.id)}>削除</button>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </NeonPanel>
