@@ -43,35 +43,22 @@ export function ScorePageContainer() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [roleId, setRoleId] = useState<string>(DEFAULT_SHARE_STATE.roleId);
-  const [characterId, setCharacterId] = useState<string>(DEFAULT_SHARE_STATE.characterId);
-  const [slot, setSlot] = useState<SlotType>(DEFAULT_SHARE_STATE.slot);
-  const [mainStatKey, setMainStatKey] = useState<StatKey>(DEFAULT_SHARE_STATE.mainStatKey);
-  const [mainStatValue, setMainStatValue] = useState<string>(DEFAULT_SHARE_STATE.mainStatValue);
-  const [subStats, setSubStats] = useState<Array<{ key: StatKey; value: string }>>(DEFAULT_SHARE_STATE.subStats);
-  const [isHydratedFromUrl, setIsHydratedFromUrl] = useState(false);
+  const [roleId, setRoleId] = useState<string>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).roleId);
+  const [characterId, setCharacterId] = useState<string>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).characterId);
+  const [slot, setSlot] = useState<SlotType>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).slot);
+  const [mainStatKey, setMainStatKey] = useState<StatKey>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).mainStatKey);
+  const [mainStatValue, setMainStatValue] = useState<string>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).mainStatValue);
+  const [subStats, setSubStats] = useState<Array<{ key: StatKey; value: string }>>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).subStats);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const shareState = useMemo<ScoreShareState>(() => ({ roleId, characterId, slot, mainStatKey, mainStatValue, subStats }), [roleId, characterId, slot, mainStatKey, mainStatValue, subStats]);
 
   useEffect(() => {
-    const parsed = fromShareQuery(searchParams, DEFAULT_SHARE_STATE);
-    setRoleId(parsed.roleId);
-    setCharacterId(parsed.characterId);
-    setSlot(parsed.slot);
-    setMainStatKey(parsed.mainStatKey);
-    setMainStatValue(parsed.mainStatValue);
-    setSubStats(parsed.subStats);
-    setIsHydratedFromUrl(true);
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (!isHydratedFromUrl) return;
     const nextQuery = toShareQuery(shareState).toString();
     const currentQuery = searchParams.toString();
     if (nextQuery === currentQuery) return;
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
-  }, [isHydratedFromUrl, pathname, router, searchParams, shareState]);
+  }, [pathname, router, searchParams, shareState]);
 
   const shareUrl = useMemo(() => {
     const query = toShareQuery(shareState).toString();
@@ -174,7 +161,7 @@ export function ScorePageContainer() {
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-sm">
               メインステータス
-              <select className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={mainStatKey} onChange={(e) => setMainStatKey(e.target.value)}>
+              <select className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={mainStatKey} onChange={(e) => setMainStatKey(e.target.value as StatKey)}>
                 {STAT_KEYS.map((key) => <option key={key} value={key}>{key}</option>)}
               </select>
             </label>
@@ -188,7 +175,7 @@ export function ScorePageContainer() {
             <p className="text-sm font-medium">サブステータス</p>
             {subStats.map((sub, index) => (
               <div key={index} className="grid gap-2 sm:grid-cols-2">
-                <select className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-sm" value={sub.key} onChange={(e) => setSubStats((prev) => prev.map((item, i) => i === index ? { ...item, key: e.target.value } : item))}>
+                <select className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-sm" value={sub.key} onChange={(e) => setSubStats((prev) => prev.map((item, i) => i === index ? { ...item, key: e.target.value as StatKey } : item))}>
                   {STAT_KEYS.map((key) => <option key={key} value={key}>{key}</option>)}
                 </select>
                 <input className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-sm" type="number" min={0} placeholder="未入力可" value={sub.value} onChange={(e) => setSubStats((prev) => prev.map((item, i) => i === index ? { ...item, value: e.target.value } : item))} />
