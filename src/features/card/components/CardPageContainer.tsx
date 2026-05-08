@@ -8,6 +8,7 @@ import { sampleScoreConfig } from '@/lib/score/sampleConfig';
 import type { SlotType, StatKey } from '@/lib/score/types';
 import { deleteGuestHistory, listGuestHistory, saveGuestHistory } from '@/features/history/storage';
 import { canUseCloudStorage, deleteCloudHistory, listCloudHistory, saveCloudHistory, type CloudHistoryEntry } from '@/features/history/cloudStorage';
+import { listMigrationGuestHistory, migrateGuestHistoryToCloud } from '@/features/history/migration';
 import { useAuthState } from '@/features/auth/AuthProvider';
 import type { GuestHistoryEntry } from '@/features/history/types';
 import { exportElementToPng } from '../lib/cardImage';
@@ -34,8 +35,11 @@ export function CardPageContainer() {
   const [cloudHistory, setCloudHistory] = useState<CloudHistoryEntry[]>([]);
   const [cloudError, setCloudError] = useState<string | null>(null);
   const [cloudSaveStatus, setCloudSaveStatus] = useState<'idle'|'saving'|'success'|'error'>('idle');
+  const [migrationStatus, setMigrationStatus] = useState<'idle' | 'migrating' | 'success' | 'error'>('idle');
+  const [migrationMessage, setMigrationMessage] = useState<string | null>(null);
   const auth = useAuthState();
   const cloudEnabled = canUseCloudStorage(auth.user);
+  const hasGuestHistoryForMigration = listMigrationGuestHistory().length > 0;
   const previewRef = useRef<HTMLDivElement>(null);
 
   const errors = useMemo(() => {
@@ -115,6 +119,23 @@ export function CardPageContainer() {
     }
   };
 
+
+
+  const handleMigrateGuestHistory = async () => {
+    if (!auth.user || auth.status !== 'signed_in' || !cloudEnabled) return;
+    try {
+      setMigrationStatus('migrating');
+      setMigrationMessage(null);
+      const result = await migrateGuestHistoryToCloud(auth.user);
+      setHistory(listCardHistory());
+      setCloudHistory(await listCloudHistory(auth.user));
+      setMigrationStatus('success');
+      setMigrationMessage(`移行完了: ${result.migratedCount}件保存 / ${result.skippedCount}件は重複のためスキップ`);
+    } catch (e) {
+      setMigrationStatus('error');
+      setMigrationMessage(e instanceof Error ? e.message : '移行に失敗しました。');
+    }
+  };
   const handleDeleteCloud = async (id: string) => {
     if (!auth.user || !cloudEnabled) return;
     try {
@@ -157,6 +178,15 @@ export function CardPageContainer() {
         {!cloudEnabled && auth.status === 'signed_in' && <p className="text-xs text-[var(--color-text-secondary)]">Supabase未設定またはセッション期限切れのためクラウド保存を利用できません。</p>}
         {cloudSaveStatus === 'success' && <p className="text-xs text-[var(--color-accent)]">クラウドに保存しました。</p>}
         {cloudError && <p className="text-xs text-[var(--color-danger)]">{cloudError}</p>}
+        {auth.status === 'signed_in' && cloudEnabled && hasGuestHistoryForMigration && (
+          <div className="rounded-md border border-[var(--color-border)] p-2">
+            <p className="text-xs text-[var(--color-text-secondary)]">ゲスト履歴（score/card）をクラウドへ一括移行できます。成功時はローカル履歴を削除します。</p>
+            <button type="button" className="mt-2 rounded-md border border-[var(--color-border)] px-3 py-2 text-xs hover:border-[var(--color-accent)] disabled:opacity-50" onClick={handleMigrateGuestHistory} disabled={migrationStatus === 'migrating'}>ゲスト履歴をクラウドへ移行</button>
+          </div>
+        )}
+        {migrationStatus === 'migrating' && <p className="text-xs text-[var(--color-text-secondary)]">移行中です...</p>}
+        {migrationStatus === 'success' && migrationMessage && <p className="text-xs text-[var(--color-accent)]">{migrationMessage}</p>}
+        {migrationStatus === 'error' && migrationMessage && <p className="text-xs text-[var(--color-danger)]">移行失敗: {migrationMessage}</p>}
         <div>
           <p className="mb-1 text-sm font-medium">クラウド保存済み</p>
           {cloudHistory.length === 0 ? <p className="text-xs text-[var(--color-text-secondary)]">クラウド保存データはありません。</p> : (
