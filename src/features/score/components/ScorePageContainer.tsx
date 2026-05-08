@@ -40,6 +40,10 @@ const DEFAULT_SHARE_STATE: ScoreShareState = {
   subStats: Array.from({ length: SHARE_SUB_STAT_COUNT }, () => ({ key: STAT_KEYS[0], value: '' })),
 };
 
+function listScoreHistory(): GuestHistoryEntry[] {
+  return listGuestHistory().filter((entry) => entry.kind === 'score');
+}
+
 export function ScorePageContainer() {
   const router = useRouter();
   const pathname = usePathname();
@@ -52,12 +56,8 @@ export function ScorePageContainer() {
   const [mainStatValue, setMainStatValue] = useState<string>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).mainStatValue);
   const [subStats, setSubStats] = useState<Array<{ key: StatKey; value: string }>>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).subStats);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [history, setHistory] = useState<GuestHistoryEntry[]>([]);
+  const [history, setHistory] = useState<GuestHistoryEntry[]>(() => listScoreHistory());
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
-
-  useEffect(() => {
-    setHistory(listGuestHistory().filter((entry) => entry.kind === 'score'));
-  }, []);
 
   const shareState = useMemo<ScoreShareState>(() => ({ roleId, characterId, slot, mainStatKey, mainStatValue, subStats }), [roleId, characterId, slot, mainStatKey, mainStatValue, subStats]);
 
@@ -82,39 +82,6 @@ export function ScorePageContainer() {
       setCopyStatus('error');
     }
   }, [shareUrl]);
-
-  const handleSaveHistory = useCallback(() => {
-    if (!result) return;
-    const mainValue = Number(mainStatValue);
-    if (Number.isNaN(mainValue)) return;
-    const parsedSubStats = subStats
-      .filter((sub) => sub.value.trim().length > 0)
-      .map((sub) => ({ key: sub.key, value: Number(sub.value) }))
-      .filter((sub) => !Number.isNaN(sub.value));
-
-    const next = saveGuestHistory({
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      kind: 'score',
-      createdAt: new Date().toISOString(),
-      payload: {
-        roleId,
-        characterId: characterId || undefined,
-        slot,
-        mainStatKey,
-        mainStatValue: mainValue,
-        subStats: parsedSubStats,
-        score: result.buildScoreNormalized,
-        rank: result.rank,
-      },
-    });
-    setHistory(next.filter((entry) => entry.kind === 'score'));
-    setSaveStatus('success');
-  }, [characterId, mainStatKey, mainStatValue, result, roleId, slot, subStats]);
-
-  const handleDeleteHistory = useCallback((id: string) => {
-    const next = deleteGuestHistory(id);
-    setHistory(next.filter((entry) => entry.kind === 'score'));
-  }, []);
 
   const errors = useMemo(() => {
     const next: string[] = [];
@@ -154,6 +121,39 @@ export function ScorePageContainer() {
       sampleScoreConfig,
     );
   }, [characterId, errors.length, mainStatKey, mainStatValue, roleId, slot, subStats]);
+
+  const handleSaveHistory = useCallback(() => {
+    if (!result) return;
+    const mainValue = Number(mainStatValue);
+    if (Number.isNaN(mainValue)) return;
+    const parsedSubStats = subStats
+      .filter((sub) => sub.value.trim().length > 0)
+      .map((sub) => ({ key: sub.key, value: Number(sub.value) }))
+      .filter((sub) => !Number.isNaN(sub.value));
+
+    const next = saveGuestHistory({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      kind: 'score',
+      createdAt: new Date().toISOString(),
+      payload: {
+        roleId,
+        characterId: characterId || undefined,
+        slot,
+        mainStatKey,
+        mainStatValue: mainValue,
+        subStats: parsedSubStats,
+        score: result.buildScoreNormalized,
+        rank: result.rank,
+      },
+    });
+    setHistory(next.filter((entry) => entry.kind === 'score'));
+    setSaveStatus('success');
+  }, [characterId, mainStatKey, mainStatValue, result, roleId, slot, subStats]);
+
+  const handleDeleteHistory = useCallback((id: string) => {
+    const next = deleteGuestHistory(id);
+    setHistory(next.filter((entry) => entry.kind === 'score'));
+  }, []);
 
   return (
     <div className="space-y-6">
