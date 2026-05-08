@@ -8,6 +8,8 @@ import { calculateBuildScore } from '@/lib/score';
 import { sampleScoreConfig } from '@/lib/score/sampleConfig';
 import type { SlotType, StatKey } from '@/lib/score/types';
 import { deleteGuestHistory, listGuestHistory, saveGuestHistory } from '@/features/history/storage';
+import { canUseCloudStorage, deleteCloudHistory, listCloudHistory, saveCloudHistory, type CloudHistoryEntry } from '@/features/history/cloudStorage';
+import { useAuthState } from '@/features/auth/AuthProvider';
 import type { GuestHistoryEntry } from '@/features/history/types';
 import { fromShareQuery, SHARE_SUB_STAT_COUNT, toShareQuery } from '../share/mapper';
 import type { ScoreShareState } from '../share/types';
@@ -58,6 +60,11 @@ export function ScorePageContainer() {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [history, setHistory] = useState<GuestHistoryEntry[]>(() => listScoreHistory());
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
+  const [cloudHistory, setCloudHistory] = useState<CloudHistoryEntry[]>([]);
+  const [cloudStatus, setCloudStatus] = useState<'idle'|'saving'|'success'|'error'>('idle');
+  const [cloudError, setCloudError] = useState<string | null>(null);
+  const auth = useAuthState();
+  const cloudEnabled = canUseCloudStorage(auth.user);
 
   const shareState = useMemo<ScoreShareState>(() => ({ roleId, characterId, slot, mainStatKey, mainStatValue, subStats }), [roleId, characterId, slot, mainStatKey, mainStatValue, subStats]);
 
@@ -149,6 +156,46 @@ export function ScorePageContainer() {
     setHistory(next.filter((entry) => entry.kind === 'score'));
     setSaveStatus('success');
   }, [characterId, mainStatKey, mainStatValue, result, roleId, slot, subStats]);
+
+  useEffect(() => {
+    let active = true;
+    if (auth.status !== 'signed_in' || !cloudEnabled || !auth.user) {
+      setCloudHistory([]);
+      return;
+    }
+    listCloudHistory(auth.user).then((items) => { if (active) setCloudHistory(items); }).catch((e: Error) => { if (active) setCloudError(e.message); });
+    return () => { active = false; };
+  }, [auth.status, auth.user, cloudEnabled]);
+
+  const handleSaveCloud = useCallback(async () => {
+    if (!result || !auth.user || !cloudEnabled) return;
+    try {
+      setCloudStatus('saving');
+      setCloudError(null);
+      const mainValue = Number(mainStatValue);
+      const parsedSubStats = subStats.filter((sub) => sub.value.trim().length > 0).map((sub) => ({ key: sub.key, value: Number(sub.value) })).filter((sub) => !Number.isNaN(sub.value));
+      await saveCloudHistory(auth.user, {
+        kind: 'score',
+        payload: { roleId, characterId: characterId || undefined, slot, mainStatKey, mainStatValue: mainValue, subStats: parsedSubStats, score: result.buildScoreNormalized, rank: result.rank },
+      });
+      const items = await listCloudHistory(auth.user);
+      setCloudHistory(items);
+      setCloudStatus('success');
+    } catch (e) {
+      setCloudStatus('error');
+      setCloudError(e instanceof Error ? e.message : 'クラウド保存に失敗しました。');
+    }
+  }, [auth.user, characterId, cloudEnabled, mainStatKey, mainStatValue, result, roleId, slot, subStats]);
+
+  const handleDeleteCloud = useCallback(async (id: string) => {
+    if (!auth.user || !cloudEnabled) return;
+    try {
+      await deleteCloudHistory(auth.user, id);
+      setCloudHistory((prev) => prev.filter((entry) => entry.id !== id));
+    } catch (e) {
+      setCloudError(e instanceof Error ? e.message : '削除に失敗しました。');
+    }
+  }, [auth.user, cloudEnabled]);
 
   const handleDeleteHistory = useCallback((id: string) => {
     const next = deleteGuestHistory(id);
@@ -243,6 +290,15 @@ export function ScorePageContainer() {
               この結果を履歴保存
             </button>
             {saveStatus === 'success' && <p className="mt-1 text-xs text-[var(--color-accent)]">履歴に保存しました（最大20件）。</p>}
+            <div className="mt-2 space-y-1">
+              <button type="button" className="rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:border-[var(--color-accent)] disabled:opacity-50" onClick={handleSaveCloud} disabled={!result || !cloudEnabled || auth.status !== 'signed_in' || cloudStatus === 'saving'}>
+                この結果をクラウド保存
+              </button>
+              {auth.status !== 'signed_in' && <p className="text-xs text-[var(--color-text-secondary)]">クラウド保存するにはログインしてください。</p>}
+              {!cloudEnabled && auth.status === 'signed_in' && <p className="text-xs text-[var(--color-text-secondary)]">Supabase未設定またはセッション期限切れのためクラウド保存を利用できません。</p>}
+              {cloudStatus === 'success' && <p className="text-xs text-[var(--color-accent)]">クラウドに保存しました。</p>}
+              {cloudError && <p className="text-xs text-[var(--color-danger)]">{cloudError}</p>}
+            </div>
           </div>
           <div>
             <p className="mb-1 text-sm font-medium">警告</p>
@@ -252,6 +308,14 @@ export function ScorePageContainer() {
               </ul>
             ) : (
               <p className="text-xs text-[var(--color-text-secondary)]">警告はありません。</p>
+            )}
+          </div>
+          <div>
+            <p className="mb-1 text-sm font-medium">クラウド保存済み</p>
+            {cloudHistory.length === 0 ? <p className="text-xs text-[var(--color-text-secondary)]">クラウド保存データはありません。</p> : (
+              <ul className="space-y-2">
+                {cloudHistory.map((entry) => <li key={entry.id} className="rounded-md border border-[var(--color-border)] p-2 text-xs"><p>{new Date(entry.createdAt).toLocaleString('ja-JP')} / {SLOT_LABELS[entry.payload.slot]} / {entry.payload.mainStatKey}:{entry.payload.mainStatValue}</p><p>スコア: {entry.payload.score.toFixed(2)} / ランク: {entry.payload.rank}</p><button type="button" className="mt-1 underline" onClick={() => handleDeleteCloud(entry.id)}>削除</button></li>)}
+              </ul>
             )}
           </div>
           <div>
