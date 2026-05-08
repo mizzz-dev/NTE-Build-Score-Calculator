@@ -7,6 +7,8 @@ const ALLOWED_STAT_KEYS = new Set(Object.keys(sampleScoreConfig.statRanges));
 const DEFAULT_STAT_KEY = Object.keys(sampleScoreConfig.statRanges)[0] as StatKey;
 export const SHARE_SUB_STAT_COUNT = 3;
 
+type ShareQueryReader = Pick<URLSearchParams, 'get' | 'toString'>;
+
 function safeStatKey(value: string): StatKey {
   return ALLOWED_STAT_KEYS.has(value) ? (value as StatKey) : DEFAULT_STAT_KEY;
 }
@@ -35,7 +37,7 @@ export function toShareQuery(state: ScoreShareState): URLSearchParams {
 }
 
 export function fromShareQuery(
-  query: ReadonlyURLSearchParams,
+  query: ShareQueryReader,
   fallback: ScoreShareState,
 ): ScoreShareState {
   const roleId = query.get('role') || fallback.roleId;
