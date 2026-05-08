@@ -70,3 +70,9 @@
 - Supabase 前提の DB・認証・権限モデルを `docs/data-design.md` に初版確定。
 - 管理画面ロール（admin/editor/viewer）と RLS 境界を `docs/admin-requirements.md` に反映。
 - 次工程では Supabase schema / RLS policy / Auth 設定の詳細設計へ展開する。
+
+## Phase 2 補足（Issue #8 完了事項）
+- Next.js App Router 前提のコンポーネント基本設計を `docs/component-design.md` に確定。
+- `app / components / features / lib / hooks / config / types` の責務境界を定義。
+- スコア計算ロジックとUI分離、Supabase/認証/データアクセス境界、テスト単位、命名規則を明文化。
+- 次工程では本設計を基準に初期セットアップIssueへ分解し、実装に着手する。
