@@ -1,11 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { NeonPanel } from '@/components/ui/NeonPanel';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { calculateBuildScore } from '@/lib/score';
 import { sampleScoreConfig } from '@/lib/score/sampleConfig';
 import type { SlotType, StatKey } from '@/lib/score/types';
+import { fromShareQuery, SHARE_SUB_STAT_COUNT, toShareQuery } from '../share/mapper';
+import type { ScoreShareState } from '../share/types';
 
 const SLOT_LABELS: Record<SlotType, string> = {
   cartridge: 'カートリッジ',
@@ -25,18 +28,52 @@ const CHARACTER_OPTIONS = [
   { id: 'bob', label: 'Bob（要確認）' },
 ];
 
-const SUB_STAT_COUNT = 3;
 const STAT_KEYS = Object.keys(sampleScoreConfig.statRanges) as StatKey[];
+const DEFAULT_SHARE_STATE: ScoreShareState = {
+  roleId: 'dps',
+  characterId: '',
+  slot: 'cartridge',
+  mainStatKey: STAT_KEYS[0],
+  mainStatValue: '',
+  subStats: Array.from({ length: SHARE_SUB_STAT_COUNT }, () => ({ key: STAT_KEYS[0], value: '' })),
+};
 
 export function ScorePageContainer() {
-  const [roleId, setRoleId] = useState<string>('dps');
-  const [characterId, setCharacterId] = useState<string>('');
-  const [slot, setSlot] = useState<SlotType>('cartridge');
-  const [mainStatKey, setMainStatKey] = useState<StatKey>(STAT_KEYS[0]);
-  const [mainStatValue, setMainStatValue] = useState<string>('');
-  const [subStats, setSubStats] = useState<Array<{ key: StatKey; value: string }>>(
-    Array.from({ length: SUB_STAT_COUNT }, () => ({ key: STAT_KEYS[0], value: '' })),
-  );
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [roleId, setRoleId] = useState<string>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).roleId);
+  const [characterId, setCharacterId] = useState<string>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).characterId);
+  const [slot, setSlot] = useState<SlotType>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).slot);
+  const [mainStatKey, setMainStatKey] = useState<StatKey>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).mainStatKey);
+  const [mainStatValue, setMainStatValue] = useState<string>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).mainStatValue);
+  const [subStats, setSubStats] = useState<Array<{ key: StatKey; value: string }>>(() => fromShareQuery(searchParams, DEFAULT_SHARE_STATE).subStats);
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const shareState = useMemo<ScoreShareState>(() => ({ roleId, characterId, slot, mainStatKey, mainStatValue, subStats }), [roleId, characterId, slot, mainStatKey, mainStatValue, subStats]);
+
+  useEffect(() => {
+    const nextQuery = toShareQuery(shareState).toString();
+    const currentQuery = searchParams.toString();
+    if (nextQuery === currentQuery) return;
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }, [pathname, router, searchParams, shareState]);
+
+  const shareUrl = useMemo(() => {
+    const query = toShareQuery(shareState).toString();
+    if (typeof window === 'undefined') return `${pathname}?${query}`;
+    return `${window.location.origin}${pathname}?${query}`;
+  }, [pathname, shareState]);
+
+  const handleCopyUrl = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopyStatus('success');
+    } catch {
+      setCopyStatus('error');
+    }
+  }, [shareUrl]);
 
   const errors = useMemo(() => {
     const next: string[] = [];
@@ -83,6 +120,16 @@ export function ScorePageContainer() {
       <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
         <NeonPanel className="space-y-4">
           <h2 className="text-lg font-semibold">入力パネル</h2>
+          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-3 text-xs space-y-2">
+            <p>共有URL対象: ロール / キャラクター / 装備タイプ / メイン / サブ1〜3</p>
+            <p>共有URL対象外: 計算結果表示状態（スコア・ランク・内訳・警告は復元後に再計算）</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" onClick={handleCopyUrl} className="rounded-md border border-[var(--color-border)] px-3 py-1 text-sm hover:border-[var(--color-accent)]">共有URLをコピー</button>
+              <span className="text-xs text-[var(--color-text-secondary)] break-all">{shareUrl}</span>
+            </div>
+            {copyStatus === 'success' && <p className="text-xs text-[var(--color-accent)]">共有URLをコピーしました。</p>}
+            {copyStatus === 'error' && <p className="text-xs text-[var(--color-danger)]">コピーに失敗しました。URLを手動でコピーしてください。</p>}
+          </div>
 
           <label className="block text-sm">
             ロール
@@ -114,7 +161,7 @@ export function ScorePageContainer() {
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-sm">
               メインステータス
-              <select className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={mainStatKey} onChange={(e) => setMainStatKey(e.target.value)}>
+              <select className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={mainStatKey} onChange={(e) => setMainStatKey(e.target.value as StatKey)}>
                 {STAT_KEYS.map((key) => <option key={key} value={key}>{key}</option>)}
               </select>
             </label>
@@ -128,7 +175,7 @@ export function ScorePageContainer() {
             <p className="text-sm font-medium">サブステータス</p>
             {subStats.map((sub, index) => (
               <div key={index} className="grid gap-2 sm:grid-cols-2">
-                <select className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-sm" value={sub.key} onChange={(e) => setSubStats((prev) => prev.map((item, i) => i === index ? { ...item, key: e.target.value } : item))}>
+                <select className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-sm" value={sub.key} onChange={(e) => setSubStats((prev) => prev.map((item, i) => i === index ? { ...item, key: e.target.value as StatKey } : item))}>
                   {STAT_KEYS.map((key) => <option key={key} value={key}>{key}</option>)}
                 </select>
                 <input className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-sm" type="number" min={0} placeholder="未入力可" value={sub.value} onChange={(e) => setSubStats((prev) => prev.map((item, i) => i === index ? { ...item, value: e.target.value } : item))} />
