@@ -33,3 +33,15 @@ pnpm lint
 ```bash
 pnpm build
 ```
+
+## Supabase Auth設定（Issue #27）
+1. Supabaseプロジェクトを作成し、AuthenticationでGoogleプロバイダを有効化します。
+2. プロジェクトのURLとAnon Keyを確認します。
+3. `.env.local` に以下を設定します（secret/service role keyは設定しない）。
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+- 環境変数が未設定の場合、UI上のログイン機能は「未設定」と表示され、アプリのビルドは継続可能です。

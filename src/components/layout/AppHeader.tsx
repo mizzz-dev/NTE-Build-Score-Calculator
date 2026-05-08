@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { GlobalNav } from '@/components/navigation/GlobalNav';
 import { MobileDrawerNav } from '@/components/navigation/MobileDrawerNav';
+import { AuthStatus } from './AuthStatus';
 
 export function AppHeader() {
   return (
@@ -10,9 +11,12 @@ export function AppHeader() {
           <Link href="/" className="text-sm font-semibold tracking-[0.08em] text-[var(--color-text-primary)] md:text-base">
             NTE BUILD SCORE CALCULATOR
           </Link>
-          <span className="hidden rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-text-muted)] md:inline-flex">
-            非公式ファンツール
-          </span>
+          <div className="flex items-center gap-3">
+            <AuthStatus />
+            <span className="hidden rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-text-muted)] md:inline-flex">
+              非公式ファンツール
+            </span>
+          </div>
         </div>
         <div className="hidden md:block">
           <GlobalNav />
