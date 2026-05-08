@@ -3,7 +3,7 @@
 ## 1. 目的・前提
 - 本書は Issue #4 の基本設計として、Supabase を前提に認証・認可・データ責務の境界を定義する。
 - PR #1（要件定義）/ PR #5（画面・ルーティング設計）/ PR #6（スコア仕様）を参照し、実装前に未確定事項を分離する。
-- 本フェーズでは**実装コード / SQL migration は追加しない**。
+- Issue #29 でログインユーザー向け保存基盤（migration/RLS）の初期実装方針を追記する。
 
 ## 2. 全体方針
 - 永続化は Supabase（PostgreSQL + Auth + RLS）を採用する。
@@ -209,3 +209,33 @@
 8. 管理者アカウント発行・承認フロー。
 9. 退会時データ削除ポリシー（法務要件含む）。
 10. 公式素材利用規約確定までの表示文言最終版。
+
+
+## 15. Issue #29 実装方針（ログインユーザー保存基盤）
+
+### 15.1 migration管理
+- SupabaseのDDL/RLSは `supabase/migrations` 配下で時系列SQL管理する。
+- ファイル命名は `YYYYMMDDHHMMSS_<summary>.sql` とし、既存migrationの上書きは禁止する。
+
+### 15.2 個人保存テーブル
+- テーブル名: `user_saved_results`。
+- 主キー: `id (uuid)`、ユーザー識別: `user_id (auth.users.id FK)`。
+- 種別: `result_kind`（`score` / `card` enum）。
+- 保存データ本体: `payload (jsonb)`。
+- 検索補助: `score_total`, `score_rank`, `source_version`, `created_at`, `updated_at`。
+- `payload` はJSON object制約を持たせ、secret / 不要PIIは保存対象外とする。
+
+### 15.3 RLS方針
+- `user_saved_results` は RLS を有効化し、本人一致（`auth.uid() = user_id`）のみ許可する。
+- 許可操作は `SELECT/INSERT/UPDATE/DELETE` の本人データのみに限定する。
+- 匿名ユーザーや他ユーザー行へのアクセスは deny-by-default を維持する。
+
+### 15.4 公開/非公開フラグの扱い
+- 今回の個人保存テーブルには `is_public` を追加しない。
+- 理由: 個人保存とランキング/公開用途を同一テーブルで混在させると、RLS・公開範囲制御が複雑化するため。
+- 公開・ランキング対象は将来 `ranking_snapshots` / `ranking_entries` など別責務テーブルで管理する。
+
+### 15.5 今回の非対応
+- 保存UIの実装。
+- ゲスト履歴のログインユーザー保存への移行。
+- ランキング生成・管理機能。
