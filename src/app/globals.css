@@ -15,6 +15,8 @@
   --color-accent: #52f3ff;
   --color-accent-soft: rgba(82, 243, 255, 0.16);
   --color-accent-strong: #66ffd5;
+  --color-accent-violet: #7f8dff;
+  --glow-accent: 0 0 28px rgba(82, 243, 255, 0.24);
   --color-danger: #ff5f91;
 }
 
@@ -31,6 +33,7 @@ body {
     linear-gradient(180deg, #050914 0%, #070b16 45%, #080d19 100%);
   color: var(--color-text-primary);
   font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+  line-height: 1.6;
 }
 
 a {
