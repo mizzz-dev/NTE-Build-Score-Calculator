@@ -159,11 +159,19 @@ export function ScorePageContainer() {
 
   useEffect(() => {
     let active = true;
-    if (auth.status !== 'signed_in' || !cloudEnabled || !auth.user) {
-      setCloudHistory([]);
-      return;
-    }
-    listCloudHistory(auth.user).then((items) => { if (active) setCloudHistory(items); }).catch((e: Error) => { if (active) setCloudError(e.message); });
+
+    queueMicrotask(() => {
+      if (!active) return;
+      if (auth.status !== 'signed_in' || !cloudEnabled || !auth.user) {
+        setCloudHistory([]);
+        return;
+      }
+
+      listCloudHistory(auth.user)
+        .then((items) => { if (active) setCloudHistory(items); })
+        .catch((e: Error) => { if (active) setCloudError(e.message); });
+    });
+
     return () => { active = false; };
   }, [auth.status, auth.user, cloudEnabled]);
 
