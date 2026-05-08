@@ -39,7 +39,7 @@ export function CardPageContainer() {
   const [migrationMessage, setMigrationMessage] = useState<string | null>(null);
   const auth = useAuthState();
   const cloudEnabled = canUseCloudStorage(auth.user);
-  const hasGuestHistoryForMigration = useMemo(() => listMigrationGuestHistory().length > 0, [history.length]);
+  const hasGuestHistoryForMigration = listMigrationGuestHistory().length > 0;
   const previewRef = useRef<HTMLDivElement>(null);
 
   const errors = useMemo(() => {
