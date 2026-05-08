@@ -60,3 +60,7 @@
 18. Analytics/Error Monitoring
 19. テスト
 20. リリース準備
+
+## Phase 2 補足（Issue #3 完了事項）
+- スコア計算モデル詳細設計（式・重み・閾値・優先順位）を `docs/scoring-spec.md` に確定。
+- 次工程では本仕様を基準に API/バリデーション/テスト詳細へ展開する。
