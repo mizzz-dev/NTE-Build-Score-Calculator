@@ -1,5 +1,5 @@
-import { EmptyStatePage } from '@/components/page/EmptyStatePage';
+import { ComparePageContainer } from '@/features/compare/components/ComparePageContainer';
 
 export default function ComparePage() {
-  return <EmptyStatePage title="ビルド比較" subtitle="複数ビルド比較のための空状態です。" badge="SCR-003" />;
+  return <ComparePageContainer />;
 }
