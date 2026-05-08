@@ -1,8 +1,5 @@
+import { EmptyStatePage } from '@/components/page/EmptyStatePage';
+
 export default function GuidePage() {
-  return (
-    <section>
-      <h1 className="text-2xl font-bold">guide</h1>
-      <p>guide ページの骨組みです。</p>
-    </section>
-  );
+  return <EmptyStatePage title="使い方" subtitle="初回利用者向け手順を整理する画面の空状態です。" badge="SCR-007" />;
 }

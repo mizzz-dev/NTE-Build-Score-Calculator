@@ -1,10 +1,42 @@
 @import 'tailwindcss';
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
+
+  --color-bg: #070b16;
+  --color-bg-elevated: #0d1425;
+  --color-panel: #111a2f;
+  --color-card: #15203a;
+  --color-border: #223457;
+  --color-border-strong: #2f4c7d;
+  --color-text-primary: #e8f1ff;
+  --color-text-secondary: #9db2d8;
+  --color-text-muted: #7287ac;
+  --color-accent: #52f3ff;
+  --color-accent-soft: rgba(82, 243, 255, 0.16);
+  --color-accent-strong: #66ffd5;
+  --color-danger: #ff5f91;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 6%, rgba(82, 243, 255, 0.15), transparent 32%),
+    radial-gradient(circle at 88% 18%, rgba(102, 255, 213, 0.14), transparent 30%),
+    linear-gradient(180deg, #050914 0%, #070b16 45%, #080d19 100%);
+  color: var(--color-text-primary);
+  font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: var(--color-accent-soft);
 }

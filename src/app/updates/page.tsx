@@ -1,8 +1,5 @@
+import { EmptyStatePage } from '@/components/page/EmptyStatePage';
+
 export default function UpdatesPage() {
-  return (
-    <section>
-      <h1 className="text-2xl font-bold">updates</h1>
-      <p>updates ページの骨組みです。</p>
-    </section>
-  );
+  return <EmptyStatePage title="アップデート情報" subtitle="変更履歴と告知を表示する画面の空状態です。" badge="SCR-009" />;
 }

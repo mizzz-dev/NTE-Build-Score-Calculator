@@ -1,8 +1,5 @@
+import { EmptyStatePage } from '@/components/page/EmptyStatePage';
+
 export default function StatusesPage() {
-  return (
-    <section>
-      <h1 className="text-2xl font-bold">statuses</h1>
-      <p>statuses ページの骨組みです。</p>
-    </section>
-  );
+  return <EmptyStatePage title="ステータス一覧" subtitle="ステータス定義を参照する画面の空状態です。" badge="SCR-006" />;
 }
