@@ -68,7 +68,7 @@ export function ScorePageContainer() {
   const [migrationMessage, setMigrationMessage] = useState<string | null>(null);
   const auth = useAuthState();
   const cloudEnabled = canUseCloudStorage(auth.user);
-  const hasGuestHistoryForMigration = useMemo(() => listMigrationGuestHistory().length > 0, [history.length]);
+  const hasGuestHistoryForMigration = listMigrationGuestHistory().length > 0;
 
   const shareState = useMemo<ScoreShareState>(() => ({ roleId, characterId, slot, mainStatKey, mainStatValue, subStats }), [roleId, characterId, slot, mainStatKey, mainStatValue, subStats]);
 
