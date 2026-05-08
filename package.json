@@ -15,7 +15,7 @@
     "react-dom": "19.2.6"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "3.4.0",
+    "@eslint/eslintrc": "3.3.5",
     "@tailwindcss/postcss": "4.2.4",
     "@types/node": "24.10.1",
     "@types/react": "19.2.14",
