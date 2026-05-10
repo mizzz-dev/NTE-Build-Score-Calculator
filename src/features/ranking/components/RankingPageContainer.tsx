@@ -39,7 +39,16 @@ export function RankingPageContainer() {
   }, [equipmentType, rankingAvailable, resultKind, role, scoreRank, sort]);
 
   useEffect(() => {
-    void load();
+    let active = true;
+
+    queueMicrotask(() => {
+      if (!active) return;
+      void load();
+    });
+
+    return () => {
+      active = false;
+    };
   }, [load]);
 
   const options = useMemo(() => ({
