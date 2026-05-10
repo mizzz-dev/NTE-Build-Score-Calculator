@@ -11,6 +11,7 @@ import { deleteGuestHistory, listGuestHistory, saveGuestHistory } from '@/featur
 import { canUseCloudStorage, deleteCloudHistory, listCloudHistory, saveCloudHistory, type CloudHistoryEntry } from '@/features/history/cloudStorage';
 import { listMigrationGuestHistory, migrateGuestHistoryToCloud } from '@/features/history/migration';
 import { useAuthState } from '@/features/auth/AuthProvider';
+import { createRankingEntry, isRankingAvailable } from '@/features/ranking/api';
 import type { GuestHistoryEntry } from '@/features/history/types';
 import { fromShareQuery, SHARE_SUB_STAT_COUNT, toShareQuery } from '../share/mapper';
 import type { ScoreShareState } from '../share/types';
@@ -66,9 +67,14 @@ export function ScorePageContainer() {
   const [cloudError, setCloudError] = useState<string | null>(null);
   const [migrationStatus, setMigrationStatus] = useState<'idle' | 'migrating' | 'success' | 'error'>('idle');
   const [migrationMessage, setMigrationMessage] = useState<string | null>(null);
+  const [rankingDisplayName, setRankingDisplayName] = useState<string>('');
+  const [rankingAnonymous, setRankingAnonymous] = useState<boolean>(true);
+  const [rankingStatus, setRankingStatus] = useState<'idle'|'posting'|'success'|'error'>('idle');
+  const [rankingError, setRankingError] = useState<string | null>(null);
   const auth = useAuthState();
   const cloudEnabled = canUseCloudStorage(auth.user);
   const hasGuestHistoryForMigration = listMigrationGuestHistory().length > 0;
+  const rankingAvailable = isRankingAvailable();
 
   const shareState = useMemo<ScoreShareState>(() => ({ roleId, characterId, slot, mainStatKey, mainStatValue, subStats }), [roleId, characterId, slot, mainStatKey, mainStatValue, subStats]);
 
@@ -233,6 +239,41 @@ export function ScorePageContainer() {
     setHistory(next.filter((entry) => entry.kind === 'score'));
   }, []);
 
+  const handlePostRanking = useCallback(async () => {
+    if (!result || !auth.user || auth.status !== 'signed_in' || !rankingAvailable) return;
+    if (!rankingAnonymous && rankingDisplayName.trim().length === 0) {
+      setRankingError('表示名を入力するか、匿名表示を選択してください。');
+      setRankingStatus('error');
+      return;
+    }
+    try {
+      setRankingStatus('posting');
+      setRankingError(null);
+      await createRankingEntry(auth.user, {
+        displayName: rankingAnonymous ? '匿名ユーザー' : rankingDisplayName.trim(),
+        isAnonymous: rankingAnonymous,
+        resultKind: 'score',
+        role: roleId,
+        equipmentType: slot,
+        scoreTotal: result.buildScoreNormalized,
+        scoreRank: result.rank,
+        payloadSnapshot: {
+          roleId,
+          slot,
+          score: result.buildScoreNormalized,
+          rank: result.rank,
+          mainStatKey,
+          mainStatValue: Number(mainStatValue),
+          subStats: subStats.filter((sub) => sub.value.trim().length > 0).map((sub) => ({ key: sub.key, value: Number(sub.value) })).filter((sub) => !Number.isNaN(sub.value)),
+        },
+      });
+      setRankingStatus('success');
+    } catch (e) {
+      setRankingStatus('error');
+      setRankingError(e instanceof Error ? e.message : 'ランキング投稿に失敗しました。');
+    }
+  }, [auth.status, auth.user, mainStatKey, mainStatValue, rankingAnonymous, rankingAvailable, rankingDisplayName, result, roleId, slot, subStats]);
+
   return (
     <div className="space-y-6">
       <SectionHeader title="スコア計算" subtitle="手動入力した装備ステータスから、スコア・ランク・内訳を確認できます。" />
@@ -329,6 +370,27 @@ export function ScorePageContainer() {
               {!cloudEnabled && auth.status === 'signed_in' && <p className="text-xs text-[var(--color-text-secondary)]">Supabase未設定またはセッション期限切れのためクラウド保存を利用できません。</p>}
               {cloudStatus === 'success' && <p className="text-xs text-[var(--color-accent)]">クラウドに保存しました。</p>}
               {cloudError && <p className="text-xs text-[var(--color-danger)]">{cloudError}</p>}
+              <div className="rounded-md border border-[var(--color-border)] p-2 space-y-2">
+                <p className="text-xs text-[var(--color-text-secondary)]">ランキング投稿（公開用スナップショットのみ）</p>
+                {!rankingAvailable && <p className="text-xs text-[var(--color-text-secondary)]">Supabase未設定のためランキング投稿は利用できません。</p>}
+                {rankingAvailable && (
+                  <>
+                    <label className="flex items-center gap-2 text-xs">
+                      <input type="checkbox" checked={rankingAnonymous} onChange={(e) => setRankingAnonymous(e.target.checked)} />
+                      匿名で表示する
+                    </label>
+                    {!rankingAnonymous && (
+                      <input className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-xs" placeholder="表示名（40文字以内）" value={rankingDisplayName} onChange={(e) => setRankingDisplayName(e.target.value)} />
+                    )}
+                    <button type="button" className="rounded-md border border-[var(--color-border)] px-3 py-2 text-xs hover:border-[var(--color-accent)] disabled:opacity-50" onClick={handlePostRanking} disabled={!result || auth.status !== 'signed_in' || rankingStatus === 'posting'}>
+                      この結果をランキング投稿
+                    </button>
+                    {auth.status !== 'signed_in' && <p className="text-xs text-[var(--color-text-secondary)]">ランキング投稿にはログインが必要です。</p>}
+                    {rankingStatus === 'success' && <p className="text-xs text-[var(--color-accent)]">ランキングに投稿しました。/ranking で確認できます。</p>}
+                    {rankingError && <p className="text-xs text-[var(--color-danger)]">{rankingError}</p>}
+                  </>
+                )}
+              </div>
               {auth.status === 'signed_in' && cloudEnabled && hasGuestHistoryForMigration && (
                 <div className="rounded-md border border-[var(--color-border)] p-2">
                   <p className="text-xs text-[var(--color-text-secondary)]">ゲスト履歴（score/card）をクラウドへ一括移行できます。成功時はローカル履歴を削除します。</p>
