@@ -1,6 +1,7 @@
 export const navItems = [
   { href: '/', label: 'トップ' },
   { href: '/score', label: 'スコア計算' },
+  { href: '/ranking', label: 'ランキング' },
   { href: '/compare', label: 'ビルド比較' },
   { href: '/card', label: 'カード生成' },
   { href: '/presets', label: 'プリセット' },
