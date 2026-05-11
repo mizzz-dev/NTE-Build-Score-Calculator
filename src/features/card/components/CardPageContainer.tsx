@@ -48,8 +48,18 @@ export function CardPageContainer() {
   const statKeys = useMemo(() => Object.keys(scoreConfigState.config.statRanges) as StatKey[], [scoreConfigState.config]);
 
   useEffect(() => {
-    if (!statKeys.includes(mainStatKey)) setMainStatKey(statKeys[0]);
-    setSubStats((prev) => prev.map((sub) => (statKeys.includes(sub.key) ? sub : { ...sub, key: statKeys[0] })));
+    let active = true;
+
+    queueMicrotask(() => {
+      if (!active) return;
+
+      if (!statKeys.includes(mainStatKey)) setMainStatKey(statKeys[0]);
+      setSubStats((prev) => prev.map((sub) => (statKeys.includes(sub.key) ? sub : { ...sub, key: statKeys[0] })));
+    });
+
+    return () => {
+      active = false;
+    };
   }, [mainStatKey, statKeys]);
 
   const errors = useMemo(() => {
@@ -162,8 +172,20 @@ export function CardPageContainer() {
   };
 
   useEffect(() => {
-    if (auth.status !== 'signed_in' || !cloudEnabled || !auth.user) return;
-    listCloudHistory(auth.user).then(setCloudHistory).catch((e: Error) => setCloudError(e.message));
+    let active = true;
+
+    queueMicrotask(() => {
+      if (!active) return;
+      if (auth.status !== 'signed_in' || !cloudEnabled || !auth.user) return;
+
+      listCloudHistory(auth.user)
+        .then((items) => { if (active) setCloudHistory(items); })
+        .catch((e: Error) => { if (active) setCloudError(e.message); });
+    });
+
+    return () => {
+      active = false;
+    };
   }, [auth.status, auth.user, cloudEnabled]);
 
   return <div className="space-y-6">
