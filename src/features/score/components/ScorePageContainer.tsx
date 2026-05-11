@@ -5,7 +5,6 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { NeonPanel } from '@/components/ui/NeonPanel';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { calculateBuildScore } from '@/lib/score';
-import { sampleScoreConfig } from '@/lib/score/sampleConfig';
 import type { SlotType, StatKey } from '@/lib/score/types';
 import { deleteGuestHistory, listGuestHistory, saveGuestHistory } from '@/features/history/storage';
 import { canUseCloudStorage, deleteCloudHistory, listCloudHistory, saveCloudHistory, type CloudHistoryEntry } from '@/features/history/cloudStorage';
@@ -13,6 +12,7 @@ import { listMigrationGuestHistory, migrateGuestHistoryToCloud } from '@/feature
 import { useAuthState } from '@/features/auth/AuthProvider';
 import { createRankingEntry, isRankingAvailable } from '@/features/ranking/api';
 import { usePublicMaster } from '@/features/public-master/usePublicMaster';
+import { resolveScoreConfigForScorePage } from '@/features/score/lib/scoreConfigResolver';
 import type { GuestHistoryEntry } from '@/features/history/types';
 import { fromShareQuery, SHARE_SUB_STAT_COUNT, toShareQuery } from '../share/mapper';
 import type { ScoreShareState } from '../share/types';
@@ -24,7 +24,7 @@ const SLOT_LABELS: Record<SlotType, string> = {
   console: 'コンソール',
 };
 
-const STAT_KEYS = Object.keys(sampleScoreConfig.statRanges) as StatKey[];
+const STAT_KEYS: StatKey[] = ['atk_percent', 'crit_rate', 'crit_dmg', 'hp_flat'];
 const DEFAULT_SHARE_STATE: ScoreShareState = {
   roleId: 'dps',
   characterId: '',
@@ -66,9 +66,11 @@ export function ScorePageContainer() {
   const hasGuestHistoryForMigration = listMigrationGuestHistory().length > 0;
   const rankingAvailable = isRankingAvailable();
 
-  const { loading: masterLoading, warning: masterWarning, viewModel } = usePublicMaster();
+  const { loading: masterLoading, warning: masterWarning, viewModel, data, source } = usePublicMaster();
   const roleOptions = viewModel.roleOptions;
   const characterOptions = viewModel.characterOptions;
+
+  const scoreConfigState = useMemo(() => resolveScoreConfigForScorePage(data ? { data, source: source ?? 'fallback', warning: masterWarning } : null), [data, masterWarning, source]);
 
   const shareState = useMemo<ScoreShareState>(() => ({ roleId, characterId, slot, mainStatKey, mainStatValue, subStats }), [roleId, characterId, slot, mainStatKey, mainStatValue, subStats]);
 
@@ -129,9 +131,9 @@ export function ScorePageContainer() {
           },
         },
       },
-      sampleScoreConfig,
+      scoreConfigState.config,
     );
-  }, [characterId, errors.length, mainStatKey, mainStatValue, roleId, slot, subStats]);
+  }, [characterId, errors.length, mainStatKey, mainStatValue, roleId, scoreConfigState.config, slot, subStats]);
 
   const handleSaveHistory = useCallback(() => {
     if (!result) return;
@@ -337,6 +339,8 @@ export function ScorePageContainer() {
 
           {masterLoading && <p className="text-xs text-[var(--color-text-secondary)]">公開マスタを読み込み中です...</p>}
           {masterWarning && <p className="text-xs text-[var(--color-text-secondary)]">{masterWarning}</p>}
+          {scoreConfigState.notice && <p className="text-xs text-[var(--color-text-secondary)]">{scoreConfigState.notice}</p>}
+          <p className="text-xs text-[var(--color-text-secondary)]">計算設定: {scoreConfigState.source === 'public-master' ? '公開マスタ反映中' : '標準設定(fallback)'}</p>
           {errors.length > 0 && <ul className="list-disc space-y-1 pl-5 text-sm text-[var(--color-danger)]">{errors.map((error) => <li key={error}>{error}</li>)}</ul>}
         </NeonPanel>
 
@@ -400,8 +404,9 @@ export function ScorePageContainer() {
           </div>
           <div>
             <p className="mb-1 text-sm font-medium">警告</p>
-            {result && result.warnings.length > 0 ? (
+            {result && (result.warnings.length > 0 || scoreConfigState.warnings.length > 0) ? (
               <ul className="list-disc space-y-1 pl-5 text-xs text-[var(--color-danger)]">
+                {scoreConfigState.warnings.map((warning, index) => <li key={`factory-${warning.code}-${index}`}>{warning.code}: {warning.message}</li>)}
                 {result.warnings.map((warning, index) => <li key={`${warning.code}-${index}`}>{warning.code}: {warning.message}</li>)}
               </ul>
             ) : (
