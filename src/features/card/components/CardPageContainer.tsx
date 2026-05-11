@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { NeonPanel } from '@/components/ui/NeonPanel';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { calculateBuildScore } from '@/lib/score';
-import { sampleScoreConfig } from '@/lib/score/sampleConfig';
 import type { SlotType, StatKey } from '@/lib/score/types';
 import { deleteGuestHistory, listGuestHistory, saveGuestHistory } from '@/features/history/storage';
 import { canUseCloudStorage, deleteCloudHistory, listCloudHistory, saveCloudHistory, type CloudHistoryEntry } from '@/features/history/cloudStorage';
@@ -13,9 +12,10 @@ import { useAuthState } from '@/features/auth/AuthProvider';
 import type { GuestHistoryEntry } from '@/features/history/types';
 import { exportElementToPng } from '../lib/cardImage';
 import { usePublicMaster } from '@/features/public-master/usePublicMaster';
+import { resolveScoreConfig } from '@/features/score/lib/scoreConfigResolver';
 
 const SLOT_LABELS: Record<SlotType, string> = { cartridge: 'カートリッジ', module: 'モジュール', gear: 'ギア', console: 'コンソール' };
-const STAT_KEYS = Object.keys(sampleScoreConfig.statRanges) as StatKey[];
+const DEFAULT_STAT_KEYS: StatKey[] = ['atk_percent', 'crit_rate', 'crit_dmg', 'hp_flat'];
 
 function listCardHistory(): GuestHistoryEntry[] {
   return listGuestHistory().filter((entry) => entry.kind === 'card');
@@ -25,9 +25,9 @@ export function CardPageContainer() {
   const [characterName, setCharacterName] = useState('');
   const [roleId, setRoleId] = useState('dps');
   const [slot, setSlot] = useState<SlotType>('cartridge');
-  const [mainStatKey, setMainStatKey] = useState<StatKey>(STAT_KEYS[0]);
+  const [mainStatKey, setMainStatKey] = useState<StatKey>(DEFAULT_STAT_KEYS[0]);
   const [mainStatValue, setMainStatValue] = useState('');
-  const [subStats, setSubStats] = useState(Array.from({ length: 3 }, () => ({ key: STAT_KEYS[0], value: '' })));
+  const [subStats, setSubStats] = useState(Array.from({ length: 3 }, () => ({ key: DEFAULT_STAT_KEYS[0], value: '' })));
   const [comment, setComment] = useState('');
   const [saveState, setSaveState] = useState<'idle'|'saving'|'success'|'error'>('idle');
   const [history, setHistory] = useState<GuestHistoryEntry[]>(() => listCardHistory());
@@ -44,6 +44,13 @@ export function CardPageContainer() {
   const { loading: masterLoading, warning: masterWarning, viewModel } = usePublicMaster();
   const roleOptions = viewModel?.roleOptions ?? [];
 
+  const scoreConfigState = useMemo(() => resolveScoreConfig(viewModel ? { data: viewModel.masterData, source: viewModel.source, warning: masterWarning } : null), [masterWarning, viewModel]);
+  const statKeys = useMemo(() => Object.keys(scoreConfigState.config.statRanges) as StatKey[], [scoreConfigState.config]);
+
+  useEffect(() => {
+    if (!statKeys.includes(mainStatKey)) setMainStatKey(statKeys[0]);
+    setSubStats((prev) => prev.map((sub) => (statKeys.includes(sub.key) ? sub : { ...sub, key: statKeys[0] })));
+  }, [mainStatKey, statKeys]);
 
   const errors = useMemo(() => {
     const next: string[] = [];
@@ -67,8 +74,8 @@ export function CardPageContainer() {
           subStats: subStats.filter((s) => s.value.trim().length > 0).map((s) => ({ key: s.key, value: Number(s.value) })).filter((s) => !Number.isNaN(s.value)),
         },
       },
-    }, sampleScoreConfig);
-  }, [errors.length, mainStatKey, mainStatValue, roleId, slot, subStats]);
+    }, scoreConfigState.config);
+  }, [errors.length, mainStatKey, mainStatValue, roleId, scoreConfigState.config, slot, subStats]);
 
   const createdAt = useMemo(() => new Date().toLocaleString('ja-JP'), []);
 
@@ -167,11 +174,13 @@ export function CardPageContainer() {
         <label className="block text-sm">キャラ名<input className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={characterName} onChange={(e) => setCharacterName(e.target.value)} placeholder="任意入力" /></label>
         <label className="block text-sm">ロール<select className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={roleId} onChange={(e) => setRoleId(e.target.value)}>{roleOptions.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}</select></label>
         <label className="block text-sm">装備タイプ<select className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={slot} onChange={(e) => setSlot(e.target.value as SlotType)}>{Object.entries(SLOT_LABELS).map(([k,v]) => <option key={k} value={k}>{v}</option>)}</select></label>
-        <div className="grid gap-2 sm:grid-cols-2"><label className="block text-sm">メインステータス<select className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={mainStatKey} onChange={(e) => setMainStatKey(e.target.value as StatKey)}>{STAT_KEYS.map((key) => <option key={key} value={key}>{key}</option>)}</select></label><label className="block text-sm">メイン値<input type="number" min={0} className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={mainStatValue} onChange={(e) => setMainStatValue(e.target.value)} /></label></div>
-        <div className="space-y-2"><p className="text-sm font-medium">サブステータス</p>{subStats.map((sub, i) => <div className="grid gap-2 sm:grid-cols-2" key={i}><select className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-sm" value={sub.key} onChange={(e) => setSubStats((prev) => prev.map((item, idx) => idx === i ? { ...item, key: e.target.value as StatKey } : item))}>{STAT_KEYS.map((key) => <option key={key} value={key}>{key}</option>)}</select><input type="number" min={0} className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-sm" value={sub.value} onChange={(e) => setSubStats((prev) => prev.map((item, idx) => idx === i ? { ...item, value: e.target.value } : item))} placeholder="未入力可" /></div>)}</div>
+        <div className="grid gap-2 sm:grid-cols-2"><label className="block text-sm">メインステータス<select className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={mainStatKey} onChange={(e) => setMainStatKey(e.target.value as StatKey)}>{statKeys.map((key) => <option key={key} value={key}>{key}</option>)}</select></label><label className="block text-sm">メイン値<input type="number" min={0} className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={mainStatValue} onChange={(e) => setMainStatValue(e.target.value)} /></label></div>
+        <div className="space-y-2"><p className="text-sm font-medium">サブステータス</p>{subStats.map((sub, i) => <div className="grid gap-2 sm:grid-cols-2" key={i}><select className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-sm" value={sub.key} onChange={(e) => setSubStats((prev) => prev.map((item, idx) => idx === i ? { ...item, key: e.target.value as StatKey } : item))}>{statKeys.map((key) => <option key={key} value={key}>{key}</option>)}</select><input type="number" min={0} className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-sm" value={sub.value} onChange={(e) => setSubStats((prev) => prev.map((item, idx) => idx === i ? { ...item, value: e.target.value } : item))} placeholder="未入力可" /></div>)}</div>
         <label className="block text-sm">コメント<textarea className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" rows={3} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="自由入力" /></label>
         {masterLoading && <p className="text-xs text-[var(--color-text-secondary)]">公開マスタを読み込み中です...</p>}
         {masterWarning && <p className="text-xs text-[var(--color-text-secondary)]">{masterWarning}</p>}
+        {scoreConfigState.notice && <p className="text-xs text-[var(--color-text-secondary)]">{scoreConfigState.notice}</p>}
+        <p className="text-xs text-[var(--color-text-secondary)]">設定ソース: {scoreConfigState.source === 'public-master' ? '公開マスタ' : '標準設定（フォールバック）'}</p>
         {errors.length > 0 && <ul className="list-disc pl-5 text-sm text-[var(--color-danger)]">{errors.map((error) => <li key={error}>{error}</li>)}</ul>}
         <button type="button" className="rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:border-[var(--color-accent)] disabled:opacity-50" onClick={handleSave} disabled={!result || saveState === 'saving'}>PNGで保存</button>
         <button type="button" className="ml-2 rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:border-[var(--color-accent)] disabled:opacity-50" onClick={handleSaveHistory} disabled={!result}>入力結果を履歴保存</button>

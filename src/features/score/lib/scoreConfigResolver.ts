@@ -10,7 +10,7 @@ export type ScoreConfigResolution = {
   notice: string | null;
 };
 
-export function resolveScoreConfigForScorePage(master: PublicMasterLoadResult | null): ScoreConfigResolution {
+export function resolveScoreConfig(master: PublicMasterLoadResult | null): ScoreConfigResolution {
   if (!master) {
     return { config: sampleScoreConfig, source: 'sample-fallback', warnings: [], notice: null };
   }
