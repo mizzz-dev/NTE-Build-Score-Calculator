@@ -9,5 +9,6 @@ export const navItems = [
   { href: '/guide', label: '使い方' },
   { href: '/faq', label: 'FAQ' },
   { href: '/updates', label: '更新情報' },
+  { href: '/admin', label: '管理画面' },
   { href: '/contact', label: 'お問い合わせ' },
 ] as const;
