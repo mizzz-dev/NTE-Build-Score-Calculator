@@ -29,3 +29,15 @@ export type AdminContentItem = {
   publishedAt: string | null;
   updatedAt: string | null;
 };
+
+export type AdminMasterKind = 'characters' | 'roles' | 'statuses';
+export type AdminStatKind = 'fixed' | 'percent';
+export type AdminMasterItem = {
+  id: string;
+  key: string;
+  displayName: string;
+  sortOrder: number;
+  isActive: boolean;
+  unit: string | null;
+  statKind: AdminStatKind | null;
+};
