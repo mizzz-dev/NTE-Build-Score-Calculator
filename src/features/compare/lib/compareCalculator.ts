@@ -1,6 +1,5 @@
 import { calculateBuildScore } from '@/lib/score';
-import { sampleScoreConfig } from '@/lib/score/sampleConfig';
-import type { BuildScoreResult, Rank, SlotType, StatKey } from '@/lib/score/types';
+import type { BuildScoreResult, Rank, ScoreConfig, SlotType, StatKey } from '@/lib/score/types';
 
 export type CompareBuildForm = {
   roleId: string;
@@ -41,9 +40,9 @@ export function validateCompareForm(form: CompareBuildForm): string[] {
   return errors;
 }
 
-export function calculateCompareResult(formA: CompareBuildForm, formB: CompareBuildForm): CompareResult | null {
-  const resultA = toBuildScore(formA);
-  const resultB = toBuildScore(formB);
+export function calculateCompareResult(formA: CompareBuildForm, formB: CompareBuildForm, config: ScoreConfig): CompareResult | null {
+  const resultA = toBuildScore(formA, config);
+  const resultB = toBuildScore(formB, config);
   if (!resultA || !resultB) return null;
 
   const breakdownA = getBreakdown(resultA, formA.slot);
@@ -65,7 +64,7 @@ export function calculateCompareResult(formA: CompareBuildForm, formB: CompareBu
   };
 }
 
-function toBuildScore(form: CompareBuildForm): BuildScoreResult | null {
+function toBuildScore(form: CompareBuildForm, config: ScoreConfig): BuildScoreResult | null {
   const mainValue = Number(form.mainStatValue);
   if (Number.isNaN(mainValue)) return null;
 
@@ -87,7 +86,7 @@ function toBuildScore(form: CompareBuildForm): BuildScoreResult | null {
         },
       },
     },
-    sampleScoreConfig,
+    config,
   );
 }
 

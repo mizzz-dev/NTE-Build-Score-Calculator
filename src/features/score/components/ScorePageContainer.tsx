@@ -12,7 +12,7 @@ import { listMigrationGuestHistory, migrateGuestHistoryToCloud } from '@/feature
 import { useAuthState } from '@/features/auth/AuthProvider';
 import { createRankingEntry, isRankingAvailable } from '@/features/ranking/api';
 import { usePublicMaster } from '@/features/public-master/usePublicMaster';
-import { resolveScoreConfigForScorePage } from '@/features/score/lib/scoreConfigResolver';
+import { resolveScoreConfig } from '@/features/score/lib/scoreConfigResolver';
 import type { GuestHistoryEntry } from '@/features/history/types';
 import { fromShareQuery, SHARE_SUB_STAT_COUNT, toShareQuery } from '../share/mapper';
 import type { ScoreShareState } from '../share/types';
@@ -70,7 +70,7 @@ export function ScorePageContainer() {
   const roleOptions = viewModel.roleOptions;
   const characterOptions = viewModel.characterOptions;
 
-  const scoreConfigState = useMemo(() => resolveScoreConfigForScorePage(data ? { data, source: source ?? 'fallback', warning: masterWarning } : null), [data, masterWarning, source]);
+  const scoreConfigState = useMemo(() => resolveScoreConfig(data ? { data, source: source ?? 'fallback', warning: masterWarning } : null), [data, masterWarning, source]);
 
   const shareState = useMemo<ScoreShareState>(() => ({ roleId, characterId, slot, mainStatKey, mainStatValue, subStats }), [roleId, characterId, slot, mainStatKey, mainStatValue, subStats]);
 

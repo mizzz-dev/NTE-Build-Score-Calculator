@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveScoreConfigForScorePage } from './scoreConfigResolver';
+import { resolveScoreConfig } from './scoreConfigResolver';
 
 const base = {
   source: 'remote' as const,
@@ -12,15 +12,15 @@ const base = {
   },
 };
 
-describe('resolveScoreConfigForScorePage', () => {
+describe('resolveScoreConfig', () => {
   it('公開マスタ有効時はpublic-master', () => {
-    const result = resolveScoreConfigForScorePage(base);
+    const result = resolveScoreConfig(base);
     expect(result.source).toBe('public-master');
     expect(result.notice).toBeNull();
   });
 
   it('不足時はfallbackでnotice表示', () => {
-    const result = resolveScoreConfigForScorePage({ ...base, data: { ...base.data, scoreWeights: [] } });
+    const result = resolveScoreConfig({ ...base, data: { ...base.data, scoreWeights: [] } });
     expect(result.source).toBe('sample-fallback');
     expect(result.notice).not.toBeNull();
     expect(result.warnings.length).toBeGreaterThan(0);

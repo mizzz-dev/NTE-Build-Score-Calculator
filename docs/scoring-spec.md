@@ -396,3 +396,8 @@ export interface CustomWeightPreset {
 - 公開マスタに `referenceMaxScore` を持たせるか、Factory 側導出にするか。
 - キャラ別重み未設定時の role 継承を管理画面にどこまで明示するか。
 - ランキングで「計算version混在」を許可するか（表示上の分離要否）。
+
+
+## 13. 公開マスタ由来 ScoreConfig の段階適用状況
+- PR #58: `/score` に公開マスタ由来 ScoreConfig を試験適用。
+- Issue #59 対応: `/card` と `/compare` へ適用を拡大し、主要計算画面で同一の設定解決（公開マスタ優先 / 不足・不正時は `sampleScoreConfig` フォールバック）を利用する。
