@@ -1,7 +1,7 @@
 import { getSupabaseClientConfig } from '@/lib/supabase/config';
 import { sampleScoreConfig } from '@/lib/score/sampleConfig';
 import type { StatKey } from '@/lib/score/types';
-import type { PublicMasterCharacter, PublicMasterData, PublicMasterLoadResult, PublicMasterRole, PublicMasterScoreWeight, PublicMasterStatus } from './types';
+import type { PublicMasterCharacter, PublicMasterData, PublicMasterLoadResult, PublicMasterRole, PublicMasterStatus } from './types';
 
 type CharacterRow = { id: string; slug?: string; display_name?: string; sort_order?: number };
 type RoleRow = { id: string; code?: string; display_name?: string; sort_order?: number };
