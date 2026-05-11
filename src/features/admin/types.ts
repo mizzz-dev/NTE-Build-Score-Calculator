@@ -17,3 +17,15 @@ export type AdminDashboardData = {
   updateHistories: number;
   auditLogs: number | null;
 };
+
+export type AdminContentKind = 'faqs' | 'announcements' | 'updateHistories';
+
+export type AdminContentItem = {
+  id: string;
+  title: string;
+  body: string;
+  isPublished: boolean;
+  displayOrder: number;
+  publishedAt: string | null;
+  updatedAt: string | null;
+};
