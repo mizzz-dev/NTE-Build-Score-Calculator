@@ -274,3 +274,47 @@
 - 絞り込み用: `role + equipment_type + score_rank`。
 - マイ投稿管理用: `user_id + created_at DESC`。
 - これにより次PRでランキング投稿UI/一覧UIを実装しやすい土台を先に整備する。
+
+
+## 17. Issue #39 実装方針（管理データ更新基盤）
+
+### 17.1 目的
+- 管理画面UI実装前に、DBレベルで管理権限・管理対象データ・監査ログ・公開分離を確定する。
+- 一般ユーザーが管理対象データを更新できない状態をRLSで担保する。
+
+### 17.2 新規テーブル
+- `user_roles`: 管理者RBAC（`admin`/`editor`/`viewer`）。
+- `admin_characters`: キャラクターマスタ。
+- `admin_roles_master`: ロールマスタ。
+- `admin_stats`: ステータスマスタ。
+- `admin_score_weights`: スコア重み。
+- `admin_faqs`: FAQ。
+- `admin_announcements`: お知らせ。
+- `admin_update_histories`: アップデート履歴。
+- `admin_audit_logs`: 管理操作監査ログ。
+
+### 17.3 公開参照と管理更新の分離
+- 公開参照用ビュー: `public_characters`, `public_roles`, `public_stats`, `public_score_weights`, `public_faqs`, `public_announcements`, `public_update_histories`。
+- 公開ビューは `is_public = true`（必要に応じて `is_active = true`）のみ返す。
+- `anon` / `authenticated` は公開ビューの `SELECT` のみ許可。
+- 管理用テーブルはRLSで `admin/editor/viewer` の参照、`admin/editor` の更新に制限。
+
+### 17.4 RLSポリシー方針
+- 権限判定関数: `has_admin_role(roles admin_role[])`。
+- `user_roles`: `admin` のみ参照・更新可能。
+- 管理マスタ/コンテンツ系: 
+  - `SELECT`: `admin/editor/viewer`
+  - `INSERT/UPDATE/DELETE`: `admin/editor`
+- `admin_audit_logs`:
+  - `SELECT`: `admin`
+  - `INSERT`: `admin/editor`
+- deny-by-defaultを維持し、一般ユーザーは管理用生テーブルにアクセス不可。
+
+### 17.5 セキュリティ方針
+- secret/access token/service role keyはDBカラム・ドキュメントに保存しない。
+- 監査ログ `before_json`/`after_json` はJSON object制約を持たせ、不要PIIの保存を運用禁止とする。
+
+### 17.6 非対応（本Issue外）
+- 管理画面UI。
+- 管理画面からのCRUD操作UI。
+- Supabase本番プロジェクトでの手動設定。
