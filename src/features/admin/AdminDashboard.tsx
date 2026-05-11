@@ -8,13 +8,17 @@ import { isSupabaseAuthEnabled } from '@/lib/supabase/config';
 import {
   createAdminContent,
   createAdminMasterItem,
+  createAdminScoreWeight,
   deleteAdminContent,
   deleteAdminMasterItem,
+  deleteAdminScoreWeight,
   fetchAdminAccessAndDashboard,
   fetchAdminContentList,
   fetchAdminMasterList,
+  fetchAdminScoreWeightList,
   updateAdminContent,
   updateAdminMasterItem,
+  updateAdminScoreWeight,
 } from './api';
 import type {
   AdminAccessState,
@@ -23,6 +27,8 @@ import type {
   AdminDashboardData,
   AdminMasterItem,
   AdminMasterKind,
+  AdminScoreWeightItem,
+  AdminScoreWeightProfileKind,
   AdminStatKind,
 } from './types';
 
@@ -71,6 +77,16 @@ const EMPTY_MASTER_FORM: MasterFormState = {
   unit: '',
   statKind: 'fixed',
 };
+type ScoreWeightFormState = {
+  profileKind: AdminScoreWeightProfileKind;
+  priority: string;
+  characterSlug: string;
+  roleCode: string;
+  statCode: string;
+  weight: string;
+  isPublic: boolean;
+};
+const EMPTY_SCORE_WEIGHT_FORM: ScoreWeightFormState = { profileKind: 'main', priority: '0', characterSlug: '', roleCode: '', statCode: '', weight: '1', isPublic: true };
 
 function AdminMetric({ label, value }: { label: string; value: number | string }) {
   return (
@@ -117,6 +133,13 @@ export function AdminDashboard() {
   const [contentForm, setContentForm] = useState<ContentFormState>(EMPTY_CONTENT_FORM);
   const [masterForm, setMasterForm] = useState<MasterFormState>(EMPTY_MASTER_FORM);
   const [error, setError] = useState<string | null>(null);
+  const [scoreWeightItems, setScoreWeightItems] = useState<AdminScoreWeightItem[]>([]);
+  const [loadingScoreWeights, setLoadingScoreWeights] = useState(false);
+  const [scoreWeightEditingId, setScoreWeightEditingId] = useState<string | null>(null);
+  const [scoreWeightForm, setScoreWeightForm] = useState<ScoreWeightFormState>(EMPTY_SCORE_WEIGHT_FORM);
+  const [characterOptions, setCharacterOptions] = useState<AdminMasterItem[]>([]);
+  const [roleOptions, setRoleOptions] = useState<AdminMasterItem[]>([]);
+  const [statusOptions, setStatusOptions] = useState<AdminMasterItem[]>([]);
 
   const canEdit = access.kind === 'authorized' && (access.role === 'admin' || access.role === 'editor');
 
@@ -183,6 +206,18 @@ export function AdminDashboard() {
       setLoadingMasters(false);
     }
   }, [access.kind, auth.status, auth.user, masterKind]);
+  const reloadScoreWeights = useCallback(async () => {
+    if (auth.status !== 'signed_in' || !auth.user || access.kind !== 'authorized') return;
+    setLoadingScoreWeights(true);
+    setError(null);
+    try {
+      setScoreWeightItems(await fetchAdminScoreWeightList(auth.user));
+    } catch {
+      setError('スコア重み一覧取得に失敗しました。');
+    } finally {
+      setLoadingScoreWeights(false);
+    }
+  }, [access.kind, auth.status, auth.user]);
 
   useEffect(() => {
     let active = true;
@@ -207,6 +242,37 @@ export function AdminDashboard() {
       active = false;
     };
   }, [reloadMasters]);
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void reloadScoreWeights();
+    });
+    return () => {
+      active = false;
+    };
+  }, [reloadScoreWeights]);
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(async () => {
+      if (auth.status !== 'signed_in' || !auth.user || access.kind !== 'authorized') return;
+      try {
+        const [characters, roles, statuses] = await Promise.all([
+          fetchAdminMasterList(auth.user, 'characters'),
+          fetchAdminMasterList(auth.user, 'roles'),
+          fetchAdminMasterList(auth.user, 'statuses'),
+        ]);
+        if (!active) return;
+        setCharacterOptions(characters);
+        setRoleOptions(roles);
+        setStatusOptions(statuses);
+      } catch {
+        if (active) setError('スコア重み参照マスタの取得に失敗しました。');
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [access.kind, auth.status, auth.user]);
 
   const contentValidationError = useMemo(() => {
     if (!contentForm.title.trim()) return 'タイトルは必須です。';
@@ -241,6 +307,16 @@ export function AdminDashboard() {
 
     return null;
   }, [masterForm, masterKind]);
+  const scoreWeightValidationError = useMemo(() => {
+    if (!scoreWeightForm.statCode) return '対象ステータスは必須です。';
+    const priority = Number(scoreWeightForm.priority);
+    if (!Number.isInteger(priority) || priority < 0 || priority > 9999) return '優先度は0〜9999の整数で入力してください。';
+    const weight = Number(scoreWeightForm.weight);
+    if (!Number.isFinite(weight) || weight < -9999 || weight > 9999) return '重み値は-9999〜9999の数値で入力してください。';
+    const dup = scoreWeightItems.some((item) => item.id !== scoreWeightEditingId && item.profileKind === scoreWeightForm.profileKind && item.priority === priority && (item.characterSlug ?? '') === scoreWeightForm.characterSlug && (item.roleCode ?? '') === scoreWeightForm.roleCode && item.statCode === scoreWeightForm.statCode);
+    if (dup) return '同一条件（区分/優先度/ロール/キャラクター/ステータス）の重複定義はできません。';
+    return null;
+  }, [scoreWeightEditingId, scoreWeightForm, scoreWeightItems]);
 
   const resetContentForm = () => {
     setContentEditingId(null);
@@ -251,6 +327,7 @@ export function AdminDashboard() {
     setMasterEditingId(null);
     setMasterForm(EMPTY_MASTER_FORM);
   };
+  const resetScoreWeightForm = () => { setScoreWeightEditingId(null); setScoreWeightForm(EMPTY_SCORE_WEIGHT_FORM); };
 
   const handleContentSubmit = async () => {
     if (!canEdit || !auth.user || contentValidationError) return;
@@ -318,6 +395,23 @@ export function AdminDashboard() {
       setError('マスタ削除に失敗しました。');
     }
   };
+  const handleScoreWeightSubmit = async () => {
+    if (!canEdit || !auth.user || scoreWeightValidationError) return;
+    const payload = { profileKind: scoreWeightForm.profileKind, priority: Number(scoreWeightForm.priority), characterSlug: scoreWeightForm.characterSlug || null, roleCode: scoreWeightForm.roleCode || null, statCode: scoreWeightForm.statCode, weight: scoreWeightForm.weight, isPublic: scoreWeightForm.isPublic, startsAt: null, endsAt: null };
+    try {
+      if (scoreWeightEditingId) await updateAdminScoreWeight(auth.user, { id: scoreWeightEditingId, ...payload });
+      else await createAdminScoreWeight(auth.user, payload);
+      resetScoreWeightForm();
+      await reloadScoreWeights();
+    } catch {
+      setError(scoreWeightEditingId ? 'スコア重み更新に失敗しました。' : 'スコア重み作成に失敗しました。');
+    }
+  };
+  const handleScoreWeightDelete = async (id: string) => {
+    if (!canEdit || !auth.user) return;
+    if (!window.confirm('削除しますか？')) return;
+    try { await deleteAdminScoreWeight(auth.user, id); await reloadScoreWeights(); } catch { setError('スコア重み削除に失敗しました。'); }
+  };
 
   return (
     <section className="space-y-6">
@@ -344,6 +438,42 @@ export function AdminDashboard() {
             </ul>
 
             {error && <p className="text-sm text-red-300">{error}</p>}
+
+            <NeonPanel className="space-y-3">
+              <p className="text-sm font-semibold">スコア重み管理</p>
+              <p className="text-xs text-[var(--color-text-muted)]">スコア計算ロジックには未接続の管理用マスタです。区分・優先度・対象条件ごとに重みを管理します。</p>
+              {canEdit ? (
+                <div className="space-y-2 rounded-lg border border-[var(--color-border)] p-3">
+                  <div className="grid gap-2 md:grid-cols-4">
+                    <select className="rounded border bg-transparent p-2" value={scoreWeightForm.profileKind} onChange={(event) => setScoreWeightForm((state) => ({ ...state, profileKind: event.target.value as AdminScoreWeightProfileKind }))}><option value="main">メインステータス重み</option><option value="sub">サブステータス重み</option><option value="set">セット効果重み</option><option value="equipment">装備効果重み</option></select>
+                    <input className="rounded border bg-transparent p-2" type="number" min={0} max={9999} value={scoreWeightForm.priority} onChange={(event) => setScoreWeightForm((state) => ({ ...state, priority: event.target.value }))} placeholder="優先度" />
+                    <select className="rounded border bg-transparent p-2" value={scoreWeightForm.roleCode} onChange={(event) => setScoreWeightForm((state) => ({ ...state, roleCode: event.target.value }))}><option value="">全ロール</option>{roleOptions.map((item) => <option key={item.id} value={item.key}>{item.displayName}</option>)}</select>
+                    <select className="rounded border bg-transparent p-2" value={scoreWeightForm.characterSlug} onChange={(event) => setScoreWeightForm((state) => ({ ...state, characterSlug: event.target.value }))}><option value="">全キャラクター</option>{characterOptions.map((item) => <option key={item.id} value={item.key}>{item.displayName}</option>)}</select>
+                  </div>
+                  <div className="grid gap-2 md:grid-cols-3">
+                    <select className="rounded border bg-transparent p-2" value={scoreWeightForm.statCode} onChange={(event) => setScoreWeightForm((state) => ({ ...state, statCode: event.target.value }))}><option value="">対象ステータスを選択</option>{statusOptions.map((item) => <option key={item.id} value={item.key}>{item.displayName}</option>)}</select>
+                    <input className="rounded border bg-transparent p-2" type="number" step="0.0001" value={scoreWeightForm.weight} onChange={(event) => setScoreWeightForm((state) => ({ ...state, weight: event.target.value }))} placeholder="重み値" />
+                    <label className="flex items-center gap-2"><input type="checkbox" checked={scoreWeightForm.isPublic} onChange={(event) => setScoreWeightForm((state) => ({ ...state, isPublic: event.target.checked }))} />有効</label>
+                  </div>
+                  {scoreWeightValidationError && <p className="text-xs text-amber-300">{scoreWeightValidationError}</p>}
+                  <div className="flex gap-2">
+                    <button type="button" disabled={Boolean(scoreWeightValidationError)} onClick={() => void handleScoreWeightSubmit()} className="rounded border px-3 py-1">{scoreWeightEditingId ? '更新' : '作成'}</button>
+                    {scoreWeightEditingId && <button type="button" onClick={resetScoreWeightForm} className="rounded border px-3 py-1">キャンセル</button>}
+                  </div>
+                </div>
+              ) : <p className="text-sm text-[var(--color-text-secondary)]">viewer ロールは閲覧のみ可能です。</p>}
+              <ul className="space-y-2">
+                {loadingScoreWeights && <li className="text-sm">読み込み中...</li>}
+                {!loadingScoreWeights && scoreWeightItems.map((item) => (
+                  <li key={item.id} className="rounded-lg border p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm">{item.profileKind} / 優先度: {item.priority} / role: {item.roleCode ?? 'all'} / character: {item.characterSlug ?? 'all'} / stat: {item.statCode} / weight: {item.weight} / {item.isPublic ? '有効' : '無効'}</p>
+                      {canEdit && <div className="flex gap-1"><button type="button" className="rounded border px-2 py-1 text-xs" onClick={() => { setScoreWeightEditingId(item.id); setScoreWeightForm({ profileKind: item.profileKind, priority: String(item.priority), roleCode: item.roleCode ?? '', characterSlug: item.characterSlug ?? '', statCode: item.statCode, weight: item.weight, isPublic: item.isPublic }); }}>編集</button><button type="button" className="rounded border px-2 py-1 text-xs" onClick={() => void handleScoreWeightDelete(item.id)}>削除</button></div>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </NeonPanel>
 
             <NeonPanel className="space-y-3">
               <p className="text-sm font-semibold">コンテンツ管理</p>

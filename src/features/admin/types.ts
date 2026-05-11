@@ -32,6 +32,7 @@ export type AdminContentItem = {
 
 export type AdminMasterKind = 'characters' | 'roles' | 'statuses';
 export type AdminStatKind = 'fixed' | 'percent';
+export type AdminScoreWeightProfileKind = 'main' | 'sub' | 'set' | 'equipment';
 export type AdminMasterItem = {
   id: string;
   key: string;
@@ -40,4 +41,19 @@ export type AdminMasterItem = {
   isActive: boolean;
   unit: string | null;
   statKind: AdminStatKind | null;
+};
+
+export type AdminScoreWeightItem = {
+  id: string;
+  profileKey: string;
+  profileKind: AdminScoreWeightProfileKind;
+  characterSlug: string | null;
+  roleCode: string | null;
+  statCode: string;
+  weight: string;
+  priority: number;
+  isPublic: boolean;
+  startsAt: string | null;
+  endsAt: string | null;
+  updatedAt: string | null;
 };
