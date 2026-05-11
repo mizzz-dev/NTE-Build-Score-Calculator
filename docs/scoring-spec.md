@@ -377,6 +377,14 @@ export interface CustomWeightPreset {
 4. **PR-D: fallback 縮退計画（任意）**
    - 公開マスタ運用安定後、`sampleScoreConfig` 依存の段階的削除
 
+
+
+### 12.9.1 PR-A 実装対応（Issue #55）
+- 変換層: `src/lib/score/factory.ts` に `createScoreConfigFromPublicMaster` を追加。
+- fallback 条件: ロール不足 / ステータス不足 / スコア重み不足 / 不正重み値で `sampleScoreConfig` へフォールバック。
+- mapper 方針: `statCode` を `main.*` / `sub` / `set.*` / `effect.*` / ロール別 / キャラ別へマップして `ScoreProfile` へ反映。
+- 今回は非接続実装とし、`/score` `/card` `/compare` の計算呼び出しは変更しない。
+
 ### 12.10 移行手順（運用）
 1. 設定生成層を導入し、まだ `sampleScoreConfig` と同等値を返す状態でリリース。
 2. 公開マスタ値を Factory 入力に接続し、差分検証（ステージング）。
