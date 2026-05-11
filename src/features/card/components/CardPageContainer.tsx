@@ -41,10 +41,10 @@ export function CardPageContainer() {
   const cloudEnabled = canUseCloudStorage(auth.user);
   const hasGuestHistoryForMigration = listMigrationGuestHistory().length > 0;
   const previewRef = useRef<HTMLDivElement>(null);
-  const { loading: masterLoading, warning: masterWarning, viewModel } = usePublicMaster();
+  const { loading: masterLoading, warning: masterWarning, viewModel, data: masterData, source: masterSource } = usePublicMaster();
   const roleOptions = viewModel?.roleOptions ?? [];
 
-  const scoreConfigState = useMemo(() => resolveScoreConfig(viewModel ? { data: viewModel.masterData, source: viewModel.source, warning: masterWarning } : null), [masterWarning, viewModel]);
+  const scoreConfigState = useMemo(() => resolveScoreConfig(masterData && masterSource ? { data: masterData, source: masterSource, warning: masterWarning } : null), [masterData, masterSource, masterWarning]);
   const statKeys = useMemo(() => Object.keys(scoreConfigState.config.statRanges) as StatKey[], [scoreConfigState.config]);
 
   useEffect(() => {
