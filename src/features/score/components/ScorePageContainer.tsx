@@ -12,6 +12,7 @@ import { canUseCloudStorage, deleteCloudHistory, listCloudHistory, saveCloudHist
 import { listMigrationGuestHistory, migrateGuestHistoryToCloud } from '@/features/history/migration';
 import { useAuthState } from '@/features/auth/AuthProvider';
 import { createRankingEntry, isRankingAvailable } from '@/features/ranking/api';
+import { usePublicMaster } from '@/features/public-master/usePublicMaster';
 import type { GuestHistoryEntry } from '@/features/history/types';
 import { fromShareQuery, SHARE_SUB_STAT_COUNT, toShareQuery } from '../share/mapper';
 import type { ScoreShareState } from '../share/types';
@@ -22,17 +23,6 @@ const SLOT_LABELS: Record<SlotType, string> = {
   gear: 'ギア',
   console: 'コンソール',
 };
-
-const ROLE_OPTIONS = [
-  { id: 'dps', label: 'DPS' },
-  { id: 'support', label: 'サポート' },
-];
-
-const CHARACTER_OPTIONS = [
-  { id: 'default', label: '共通' },
-  { id: 'alice', label: 'Alice（要確認）' },
-  { id: 'bob', label: 'Bob（要確認）' },
-];
 
 const STAT_KEYS = Object.keys(sampleScoreConfig.statRanges) as StatKey[];
 const DEFAULT_SHARE_STATE: ScoreShareState = {
@@ -75,6 +65,10 @@ export function ScorePageContainer() {
   const cloudEnabled = canUseCloudStorage(auth.user);
   const hasGuestHistoryForMigration = listMigrationGuestHistory().length > 0;
   const rankingAvailable = isRankingAvailable();
+
+  const { loading: masterLoading, warning: masterWarning, viewModel } = usePublicMaster();
+  const roleOptions = viewModel.roleOptions;
+  const characterOptions = viewModel.characterOptions;
 
   const shareState = useMemo<ScoreShareState>(() => ({ roleId, characterId, slot, mainStatKey, mainStatValue, subStats }), [roleId, characterId, slot, mainStatKey, mainStatValue, subStats]);
 
@@ -215,8 +209,6 @@ export function ScorePageContainer() {
     }
   }, [auth.user, cloudEnabled]);
 
-
-
   const handleMigrateGuestHistory = useCallback(async () => {
     if (!auth.user || auth.status !== 'signed_in' || !cloudEnabled) return;
     try {
@@ -294,7 +286,7 @@ export function ScorePageContainer() {
           <label className="block text-sm">
             ロール
             <select className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
-              {ROLE_OPTIONS.map((role) => (
+              {roleOptions.map((role) => (
                 <option key={role.id} value={role.id}>{role.label}</option>
               ))}
             </select>
@@ -303,8 +295,8 @@ export function ScorePageContainer() {
           <label className="block text-sm">
             キャラクター
             <select className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={characterId} onChange={(e) => setCharacterId(e.target.value)}>
-              {CHARACTER_OPTIONS.map((ch) => (
-                <option key={ch.id} value={ch.id === 'default' ? '' : ch.id}>{ch.label}</option>
+              {characterOptions.map((ch) => (
+                <option key={ch.id || 'default'} value={ch.id}>{ch.label}</option>
               ))}
             </select>
           </label>
@@ -343,6 +335,8 @@ export function ScorePageContainer() {
             ))}
           </div>
 
+          {masterLoading && <p className="text-xs text-[var(--color-text-secondary)]">公開マスタを読み込み中です...</p>}
+          {masterWarning && <p className="text-xs text-[var(--color-text-secondary)]">{masterWarning}</p>}
           {errors.length > 0 && <ul className="list-disc space-y-1 pl-5 text-sm text-[var(--color-danger)]">{errors.map((error) => <li key={error}>{error}</li>)}</ul>}
         </NeonPanel>
 

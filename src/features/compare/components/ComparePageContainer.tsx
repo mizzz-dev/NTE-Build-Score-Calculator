@@ -6,10 +6,9 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { sampleScoreConfig } from '@/lib/score/sampleConfig';
 import type { SlotType, StatKey } from '@/lib/score/types';
 import { calculateCompareResult, type CompareBuildForm, validateCompareForm } from '../lib/compareCalculator';
+import { usePublicMaster } from '@/features/public-master/usePublicMaster';
 
 const SLOT_LABELS: Record<SlotType, string> = { cartridge: 'カートリッジ', module: 'モジュール', gear: 'ギア', console: 'コンソール' };
-const ROLE_OPTIONS = [{ id: 'dps', label: 'DPS' }, { id: 'support', label: 'サポート' }];
-const CHARACTER_OPTIONS = [{ id: '', label: '共通' }, { id: 'alice', label: 'Alice（要確認）' }, { id: 'bob', label: 'Bob（要確認）' }];
 const STAT_KEYS = Object.keys(sampleScoreConfig.statRanges) as StatKey[];
 
 const initialForm = (): CompareBuildForm => ({
@@ -18,6 +17,9 @@ const initialForm = (): CompareBuildForm => ({
 
 export function ComparePageContainer() {
   const [formA, setFormA] = useState<CompareBuildForm>(initialForm);
+  const { loading: masterLoading, warning: masterWarning, viewModel } = usePublicMaster();
+  const roleOptions = viewModel?.roleOptions ?? [];
+  const characterOptions = viewModel?.characterOptions ?? [];
   const [formB, setFormB] = useState<CompareBuildForm>(initialForm);
 
   const errorsA = useMemo(() => validateCompareForm(formA), [formA]);
@@ -36,10 +38,12 @@ export function ComparePageContainer() {
     <div className="space-y-6">
       <SectionHeader title="ビルド比較" subtitle="比較元Aと比較先Bの装備入力から、スコア・ランク・内訳差分を確認できます。" />
       <div className="grid gap-4 lg:grid-cols-2">
-        <BuildFormCard label="比較元 A" form={formA} onChange={setFormA} errors={errorsA} />
-        <BuildFormCard label="比較先 B" form={formB} onChange={setFormB} errors={errorsB} />
+        <BuildFormCard label="比較元 A" form={formA} onChange={setFormA} errors={errorsA} roleOptions={roleOptions} characterOptions={characterOptions} />
+        <BuildFormCard label="比較先 B" form={formB} onChange={setFormB} errors={errorsB} roleOptions={roleOptions} characterOptions={characterOptions} />
       </div>
 
+      {masterLoading && <p className="text-xs text-[var(--color-text-secondary)]">公開マスタを読み込み中です...</p>}
+      {masterWarning && <p className="text-xs text-[var(--color-text-secondary)]">{masterWarning}</p>}
       <NeonPanel className="space-y-4">
         <h2 className="text-lg font-semibold">比較結果</h2>
         <p className="text-sm">判定: <span className="font-bold text-[var(--color-accent)]">{superiority}</span></p>
@@ -62,18 +66,18 @@ export function ComparePageContainer() {
   );
 }
 
-function BuildFormCard({ label, form, onChange, errors }: { label: string; form: CompareBuildForm; onChange: (next: CompareBuildForm) => void; errors: string[] }) {
+function BuildFormCard({ label, form, onChange, errors, roleOptions, characterOptions }: { label: string; form: CompareBuildForm; onChange: (next: CompareBuildForm) => void; errors: string[]; roleOptions: Array<{ id: string; label: string }>; characterOptions: Array<{ id: string; label: string }> }) {
   return (
     <NeonPanel className="space-y-3">
       <h2 className="text-lg font-semibold">{label}</h2>
       <label className="block text-sm">ロール
         <select className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={form.roleId} onChange={(e) => onChange({ ...form, roleId: e.target.value })}>
-          {ROLE_OPTIONS.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}
+          {roleOptions.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}
         </select>
       </label>
       <label className="block text-sm">キャラクター
         <select className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={form.characterId} onChange={(e) => onChange({ ...form, characterId: e.target.value })}>
-          {CHARACTER_OPTIONS.map((character) => <option key={character.id || 'default'} value={character.id}>{character.label}</option>)}
+          {characterOptions.map((character) => <option key={character.id || 'default'} value={character.id}>{character.label}</option>)}
         </select>
       </label>
       <label className="block text-sm">装備タイプ
