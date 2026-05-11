@@ -1,6 +1,6 @@
 import { getSupabaseClientConfig } from '@/lib/supabase/config';
 import type { AuthUser } from '@/features/auth/types';
-import type { AdminContentItem, AdminContentKind, AdminDashboardData, AdminRole } from './types';
+import type { AdminContentItem, AdminContentKind, AdminDashboardData, AdminMasterItem, AdminMasterKind, AdminRole, AdminStatKind } from './types';
 
 const ADMIN_TABLES = {
   characters: 'admin_characters',
@@ -12,175 +12,31 @@ const ADMIN_TABLES = {
   updateHistories: 'admin_update_histories',
   auditLogs: 'admin_audit_logs',
 } as const;
+const CONTENT_TABLES: Record<AdminContentKind, string> = { faqs: ADMIN_TABLES.faqs, announcements: ADMIN_TABLES.announcements, updateHistories: ADMIN_TABLES.updateHistories };
+const MASTER_TABLES: Record<AdminMasterKind, string> = { characters: ADMIN_TABLES.characters, roles: ADMIN_TABLES.roles, statuses: ADMIN_TABLES.statuses };
 
-const CONTENT_TABLES: Record<AdminContentKind, string> = {
-  faqs: ADMIN_TABLES.faqs,
-  announcements: ADMIN_TABLES.announcements,
-  updateHistories: ADMIN_TABLES.updateHistories,
-};
+type ContentRow = { id: string; title?: string; body?: string; is_published?: boolean; is_public?: boolean; display_order?: number; sort_order?: number; published_at?: string | null; updated_at?: string | null; question?: string; answer?: string; version_label?: string; summary?: string; };
+type MasterRow = { id: string; slug?: string; code?: string; display_name?: string; sort_order?: number; is_active?: boolean; unit?: string | null; stat_kind?: AdminStatKind | null; };
 
-type ContentRow = {
-  id: string;
-  title?: string;
-  body?: string;
-  is_published?: boolean;
-  display_order?: number;
-  published_at?: string | null;
-  updated_at?: string | null;
-};
+async function fetchAdminRole(user: AuthUser): Promise<AdminRole | null> { const config = getSupabaseClientConfig(); if (!config || !user.accessToken) return null; const response = await fetch(`${config.url}/rest/v1/user_roles?select=role&user_id=eq.${encodeURIComponent(user.id)}&revoked_at=is.null&limit=1`, { headers: { apikey: config.anonKey, Authorization: `Bearer ${user.accessToken}` }, cache: 'no-store' }); if (!response.ok) return null; const rows = (await response.json()) as Array<{ role?: string }>; const role = rows[0]?.role; return role === 'admin' || role === 'editor' || role === 'viewer' ? role : null; }
+async function fetchCount(table: string, user: AuthUser): Promise<number> { const config = getSupabaseClientConfig(); if (!config || !user.accessToken) return 0; const response = await fetch(`${config.url}/rest/v1/${table}?select=id`, { headers: { apikey: config.anonKey, Authorization: `Bearer ${user.accessToken}`, Prefer: 'count=exact' }, cache: 'no-store' }); if (!response.ok) return 0; const total = response.headers.get('content-range')?.split('/')[1]; return total ? Number(total) || 0 : 0; }
 
-async function fetchAdminRole(user: AuthUser): Promise<AdminRole | null> {
-  const config = getSupabaseClientConfig();
-  if (!config || !user.accessToken) return null;
-
-  const response = await fetch(`${config.url}/rest/v1/user_roles?select=role&user_id=eq.${encodeURIComponent(user.id)}&revoked_at=is.null&limit=1`, {
-    headers: {
-      apikey: config.anonKey,
-      Authorization: `Bearer ${user.accessToken}`,
-    },
-    cache: 'no-store',
-  });
-
-  if (!response.ok) return null;
-
-  const rows = (await response.json()) as Array<{ role?: string }>;
-  const role = rows[0]?.role;
-  if (role === 'admin' || role === 'editor' || role === 'viewer') return role;
-
-  return null;
+function mapContentRow(row: ContentRow, kind: AdminContentKind): AdminContentItem {
+  if (kind === 'faqs') return { id: row.id, title: row.question ?? '', body: row.answer ?? '', isPublished: Boolean(row.is_public), displayOrder: row.sort_order ?? 0, publishedAt: row.published_at ?? null, updatedAt: row.updated_at ?? null };
+  if (kind === 'updateHistories') return { id: row.id, title: row.version_label ?? '', body: row.summary ?? '', isPublished: Boolean(row.is_public), displayOrder: row.sort_order ?? 0, publishedAt: row.published_at ?? null, updatedAt: row.updated_at ?? null };
+  return { id: row.id, title: row.title ?? '', body: row.body ?? '', isPublished: Boolean(row.is_public ?? row.is_published), displayOrder: row.sort_order ?? row.display_order ?? 0, publishedAt: row.published_at ?? null, updatedAt: row.updated_at ?? null };
 }
+function mapMasterRow(kind: AdminMasterKind, row: MasterRow): AdminMasterItem { return { id: row.id, key: kind === 'characters' ? row.slug ?? '' : row.code ?? '', displayName: row.display_name ?? '', sortOrder: row.sort_order ?? 0, isActive: Boolean(row.is_active), unit: kind === 'statuses' ? row.unit ?? null : null, statKind: kind === 'statuses' ? row.stat_kind ?? 'fixed' : null }; }
+function authHeaders(user: AuthUser): HeadersInit { const config = getSupabaseClientConfig(); if (!config || !user.accessToken) return {}; return { apikey: config.anonKey, Authorization: `Bearer ${user.accessToken}`, 'Content-Type': 'application/json' }; }
 
-async function fetchCount(table: string, user: AuthUser): Promise<number> {
-  const config = getSupabaseClientConfig();
-  if (!config || !user.accessToken) return 0;
+export async function fetchAdminAccessAndDashboard(user: AuthUser): Promise<{ role: AdminRole | null; data: AdminDashboardData | null }> { const role = await fetchAdminRole(user); if (!role) return { role: null, data: null }; const [characters, roles, statuses, scoreWeights, faqs, announcements, updateHistories, auditLogs] = await Promise.all([fetchCount(ADMIN_TABLES.characters, user), fetchCount(ADMIN_TABLES.roles, user), fetchCount(ADMIN_TABLES.statuses, user), fetchCount(ADMIN_TABLES.scoreWeights, user), fetchCount(ADMIN_TABLES.faqs, user), fetchCount(ADMIN_TABLES.announcements, user), fetchCount(ADMIN_TABLES.updateHistories, user), role === 'admin' ? fetchCount(ADMIN_TABLES.auditLogs, user) : Promise.resolve(null)]); return { role, data: { characters, roles, statuses, scoreWeights, faqs, announcements, updateHistories, auditLogs } }; }
 
-  const response = await fetch(`${config.url}/rest/v1/${table}?select=id`, {
-    headers: {
-      apikey: config.anonKey,
-      Authorization: `Bearer ${user.accessToken}`,
-      Prefer: 'count=exact',
-    },
-    cache: 'no-store',
-  });
+export async function fetchAdminContentList(user: AuthUser, kind: AdminContentKind): Promise<AdminContentItem[]> { const config = getSupabaseClientConfig(); if (!config || !user.accessToken) return []; const response = await fetch(`${config.url}/rest/v1/${CONTENT_TABLES[kind]}?select=*`, { headers: authHeaders(user), cache: 'no-store' }); if (!response.ok) throw new Error('一覧の取得に失敗しました'); const rows = (await response.json()) as ContentRow[]; return rows.map((row) => mapContentRow(row, kind)); }
+export async function createAdminContent(user: AuthUser, kind: AdminContentKind, payload: Omit<AdminContentItem, 'id' | 'updatedAt'>): Promise<void> { const config = getSupabaseClientConfig(); if (!config || !user.accessToken) throw new Error('Supabase設定がありません'); const body = kind === 'faqs' ? { question: payload.title, answer: payload.body, sort_order: payload.displayOrder, is_public: payload.isPublished, published_at: payload.publishedAt } : kind === 'updateHistories' ? { version_label: payload.title, summary: payload.body, details: {}, is_public: payload.isPublished, published_at: payload.publishedAt } : { title: payload.title, body: payload.body, is_public: payload.isPublished, published_at: payload.publishedAt }; const response = await fetch(`${config.url}/rest/v1/${CONTENT_TABLES[kind]}`, { method: 'POST', headers: authHeaders(user), body: JSON.stringify(body) }); if (!response.ok) throw new Error('新規作成に失敗しました'); }
+export async function updateAdminContent(user: AuthUser, kind: AdminContentKind, payload: Omit<AdminContentItem, 'updatedAt'>): Promise<void> { const config = getSupabaseClientConfig(); if (!config || !user.accessToken) throw new Error('Supabase設定がありません'); const body = kind === 'faqs' ? { question: payload.title, answer: payload.body, sort_order: payload.displayOrder, is_public: payload.isPublished, published_at: payload.publishedAt } : kind === 'updateHistories' ? { version_label: payload.title, summary: payload.body, is_public: payload.isPublished, published_at: payload.publishedAt } : { title: payload.title, body: payload.body, is_public: payload.isPublished, published_at: payload.publishedAt }; const response = await fetch(`${config.url}/rest/v1/${CONTENT_TABLES[kind]}?id=eq.${encodeURIComponent(payload.id)}`, { method: 'PATCH', headers: authHeaders(user), body: JSON.stringify(body) }); if (!response.ok) throw new Error('更新に失敗しました'); }
+export async function deleteAdminContent(user: AuthUser, kind: AdminContentKind, id: string): Promise<void> { const config = getSupabaseClientConfig(); if (!config || !user.accessToken) throw new Error('Supabase設定がありません'); const response = await fetch(`${config.url}/rest/v1/${CONTENT_TABLES[kind]}?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', headers: authHeaders(user) }); if (!response.ok) throw new Error('削除に失敗しました'); }
 
-  if (!response.ok) return 0;
-
-  const countHeader = response.headers.get('content-range');
-  const total = countHeader?.split('/')[1];
-  return total ? Number(total) || 0 : 0;
-}
-
-function mapContentRow(row: ContentRow): AdminContentItem {
-  return {
-    id: row.id,
-    title: row.title ?? '',
-    body: row.body ?? '',
-    isPublished: Boolean(row.is_published),
-    displayOrder: Number.isFinite(row.display_order) ? (row.display_order as number) : 0,
-    publishedAt: row.published_at ?? null,
-    updatedAt: row.updated_at ?? null,
-  };
-}
-
-function authHeaders(user: AuthUser, includePrefer?: string): HeadersInit {
-  const config = getSupabaseClientConfig();
-  if (!config || !user.accessToken) return {};
-
-  return {
-    apikey: config.anonKey,
-    Authorization: `Bearer ${user.accessToken}`,
-    'Content-Type': 'application/json',
-    ...(includePrefer ? { Prefer: includePrefer } : {}),
-  };
-}
-
-export async function fetchAdminAccessAndDashboard(user: AuthUser): Promise<{ role: AdminRole | null; data: AdminDashboardData | null }> {
-  const role = await fetchAdminRole(user);
-  if (!role) return { role: null, data: null };
-
-  const [characters, roles, statuses, scoreWeights, faqs, announcements, updateHistories, auditLogs] = await Promise.all([
-    fetchCount(ADMIN_TABLES.characters, user),
-    fetchCount(ADMIN_TABLES.roles, user),
-    fetchCount(ADMIN_TABLES.statuses, user),
-    fetchCount(ADMIN_TABLES.scoreWeights, user),
-    fetchCount(ADMIN_TABLES.faqs, user),
-    fetchCount(ADMIN_TABLES.announcements, user),
-    fetchCount(ADMIN_TABLES.updateHistories, user),
-    role === 'admin' ? fetchCount(ADMIN_TABLES.auditLogs, user) : Promise.resolve(null),
-  ]);
-
-  return {
-    role,
-    data: { characters, roles, statuses, scoreWeights, faqs, announcements, updateHistories, auditLogs },
-  };
-}
-
-export async function fetchAdminContentList(user: AuthUser, kind: AdminContentKind): Promise<AdminContentItem[]> {
-  const config = getSupabaseClientConfig();
-  if (!config || !user.accessToken) return [];
-
-  const table = CONTENT_TABLES[kind];
-  const query = `select=id,title,body,is_published,display_order,published_at,updated_at&order=display_order.asc.nullslast,updated_at.desc.nullslast`;
-  const response = await fetch(`${config.url}/rest/v1/${table}?${query}`, {
-    headers: authHeaders(user),
-    cache: 'no-store',
-  });
-
-  if (!response.ok) throw new Error('一覧の取得に失敗しました');
-
-  const rows = (await response.json()) as ContentRow[];
-  return rows.map(mapContentRow);
-}
-
-export async function createAdminContent(user: AuthUser, kind: AdminContentKind, payload: Omit<AdminContentItem, 'id' | 'updatedAt'>): Promise<void> {
-  const config = getSupabaseClientConfig();
-  if (!config || !user.accessToken) throw new Error('Supabase設定がありません');
-
-  const table = CONTENT_TABLES[kind];
-  const response = await fetch(`${config.url}/rest/v1/${table}`, {
-    method: 'POST',
-    headers: authHeaders(user),
-    body: JSON.stringify({
-      title: payload.title,
-      body: payload.body,
-      is_published: payload.isPublished,
-      display_order: payload.displayOrder,
-      published_at: payload.publishedAt,
-    }),
-  });
-
-  if (!response.ok) throw new Error('新規作成に失敗しました');
-}
-
-export async function updateAdminContent(user: AuthUser, kind: AdminContentKind, payload: Omit<AdminContentItem, 'updatedAt'>): Promise<void> {
-  const config = getSupabaseClientConfig();
-  if (!config || !user.accessToken) throw new Error('Supabase設定がありません');
-
-  const table = CONTENT_TABLES[kind];
-  const response = await fetch(`${config.url}/rest/v1/${table}?id=eq.${encodeURIComponent(payload.id)}`, {
-    method: 'PATCH',
-    headers: authHeaders(user),
-    body: JSON.stringify({
-      title: payload.title,
-      body: payload.body,
-      is_published: payload.isPublished,
-      display_order: payload.displayOrder,
-      published_at: payload.publishedAt,
-    }),
-  });
-
-  if (!response.ok) throw new Error('更新に失敗しました');
-}
-
-export async function deleteAdminContent(user: AuthUser, kind: AdminContentKind, id: string): Promise<void> {
-  const config = getSupabaseClientConfig();
-  if (!config || !user.accessToken) throw new Error('Supabase設定がありません');
-
-  const table = CONTENT_TABLES[kind];
-  const response = await fetch(`${config.url}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`, {
-    method: 'DELETE',
-    headers: authHeaders(user),
-  });
-
-  if (!response.ok) throw new Error('削除に失敗しました');
-}
+export async function fetchAdminMasterList(user: AuthUser, kind: AdminMasterKind): Promise<AdminMasterItem[]> { const config = getSupabaseClientConfig(); if (!config || !user.accessToken) return []; const response = await fetch(`${config.url}/rest/v1/${MASTER_TABLES[kind]}?select=*&order=sort_order.asc,updated_at.desc`, { headers: authHeaders(user), cache: 'no-store' }); if (!response.ok) throw new Error('一覧の取得に失敗しました'); const rows = (await response.json()) as MasterRow[]; return rows.map((row) => mapMasterRow(kind, row)); }
+export async function createAdminMasterItem(user: AuthUser, kind: AdminMasterKind, payload: Omit<AdminMasterItem, 'id'>): Promise<void> { const config = getSupabaseClientConfig(); if (!config || !user.accessToken) throw new Error('Supabase設定がありません'); const body = kind === 'characters' ? { slug: payload.key, display_name: payload.displayName, sort_order: payload.sortOrder, is_active: payload.isActive } : kind === 'roles' ? { code: payload.key, display_name: payload.displayName, sort_order: payload.sortOrder, is_active: payload.isActive } : { code: payload.key, display_name: payload.displayName, sort_order: payload.sortOrder, is_active: payload.isActive, unit: payload.unit, stat_kind: payload.statKind ?? 'fixed' }; const response = await fetch(`${config.url}/rest/v1/${MASTER_TABLES[kind]}`, { method: 'POST', headers: authHeaders(user), body: JSON.stringify(body) }); if (!response.ok) throw new Error('作成に失敗しました'); }
+export async function updateAdminMasterItem(user: AuthUser, kind: AdminMasterKind, payload: AdminMasterItem): Promise<void> { const config = getSupabaseClientConfig(); if (!config || !user.accessToken) throw new Error('Supabase設定がありません'); const body = { display_name: payload.displayName, sort_order: payload.sortOrder, is_active: payload.isActive, ...(kind === 'statuses' ? { unit: payload.unit, stat_kind: payload.statKind ?? 'fixed' } : {}) }; const response = await fetch(`${config.url}/rest/v1/${MASTER_TABLES[kind]}?id=eq.${encodeURIComponent(payload.id)}`, { method: 'PATCH', headers: authHeaders(user), body: JSON.stringify(body) }); if (!response.ok) throw new Error('更新に失敗しました'); }
+export async function deleteAdminMasterItem(user: AuthUser, kind: AdminMasterKind, id: string): Promise<void> { const config = getSupabaseClientConfig(); if (!config || !user.accessToken) throw new Error('Supabase設定がありません'); const response = await fetch(`${config.url}/rest/v1/${MASTER_TABLES[kind]}?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', headers: authHeaders(user) }); if (!response.ok) throw new Error('削除に失敗しました'); }
