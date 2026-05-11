@@ -17,11 +17,11 @@ const initialForm = (): CompareBuildForm => ({
 
 export function ComparePageContainer() {
   const [formA, setFormA] = useState<CompareBuildForm>(initialForm);
-  const { loading: masterLoading, warning: masterWarning, viewModel } = usePublicMaster();
+  const { loading: masterLoading, warning: masterWarning, viewModel, data: masterData, source: masterSource } = usePublicMaster();
   const roleOptions = viewModel?.roleOptions ?? [];
   const characterOptions = viewModel?.characterOptions ?? [];
   const [formB, setFormB] = useState<CompareBuildForm>(initialForm);
-  const scoreConfigState = useMemo(() => resolveScoreConfig(viewModel ? { data: viewModel.masterData, source: viewModel.source, warning: masterWarning } : null), [masterWarning, viewModel]);
+  const scoreConfigState = useMemo(() => resolveScoreConfig(masterData && masterSource ? { data: masterData, source: masterSource, warning: masterWarning } : null), [masterData, masterSource, masterWarning]);
   const statKeys = useMemo(() => Object.keys(scoreConfigState.config.statRanges) as StatKey[], [scoreConfigState.config]);
 
   const errorsA = useMemo(() => validateCompareForm(formA), [formA]);
