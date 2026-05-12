@@ -35,6 +35,9 @@ export type OcrPocEvaluation = {
 
 export type OcrMappedDraftStat = OcrDraftStatRow & {
   matchedStatus?: PublicMasterStatus;
+  matchType?: 'exact' | 'normalized' | 'alias' | 'partial' | 'similar';
+  confidence?: number;
+  candidateStatuses?: Array<{ code: string; displayName: string; matchType: 'exact' | 'normalized' | 'alias' | 'partial' | 'similar'; confidence: number }>;
   unresolvedReason?: string;
 };
 

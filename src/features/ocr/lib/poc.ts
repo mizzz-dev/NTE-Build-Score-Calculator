@@ -1,16 +1,57 @@
 import type { PublicMasterStatus } from '@/features/public-master/types';
 import type { BrowserOcrCandidate, OcrDraftStatRow, OcrEquipmentDraft, OcrMappedDraft, OcrMappedDraftStat, OcrPocEvaluation } from './types';
 
+type MatchType = 'exact' | 'normalized' | 'alias' | 'partial' | 'similar';
+
+type MatchCandidate = {
+  status: PublicMasterStatus;
+  matchType: MatchType;
+  confidence: number;
+};
+
 const STATUS_ALIASES: Record<string, string[]> = {
-  attack: ['attack', 'atk', '攻撃力', '공격력'],
-  hp: ['hp', '体力', '생명력'],
-  defense: ['defense', 'def', '防御力', '방어력'],
-  crit_rate: ['critical rate', 'crit rate', 'crit.rate', '会心率', '치명타 확률'],
-  crit_damage: ['critical damage', 'crit dmg', 'crit.dmg', '会心ダメージ', '치명타 피해'],
+  atk_percent: ['atk', 'atk%', 'attack', 'attack%', '攻撃力', '攻撃力%', '공격력', '공격력%'],
+  hp_flat: ['hp', '体力', '생명력'],
+  def_percent: ['def', 'defense', 'defence', '防御力', '방어력'],
+  crit_rate: ['critical rate', 'crit rate', 'crit.rate', 'cri rate', '会心率', '会心', '치명타 확률'],
+  crit_dmg: ['critical damage', 'critical dmg', 'crit dmg', 'crit.dmg', '会心ダメージ', '会心ダメ', '치명타 피해'],
 };
 
 function normalizeText(input: string): string {
-  return input.trim().toLowerCase().replace(/[％]/g, '%').replace(/[．]/g, '.').replace(/\s+/g, ' ');
+  return input
+    .normalize('NFKC')
+    .trim()
+    .toLowerCase()
+    .replace(/[％]/g, '%')
+    .replace(/[．]/g, '.')
+    .replace(/[・·]/g, ' ')
+    .replace(/[|｜]/g, 'l')
+    .replace(/[!！]/g, '1')
+    .replace(/[。､，,;；:：()\[\]{}「」『』<>＜＞]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s*%/g, '%');
+}
+
+function buildComparableText(input: string): string {
+  return normalizeText(input)
+    .replace(/rate|ratio|率/g, '%')
+    .replace(/damage|dmg|ダメージ|ダメ/g, 'dmg')
+    .replace(/critical|crit|会心|치명타/g, 'crit')
+    .replace(/attack|atk|攻撃力|공격력/g, 'atk')
+    .replace(/defense|defence|def|防御力|방어력/g, 'def')
+    .replace(/hp|体力|생명력/g, 'hp')
+    .replace(/[^a-z0-9%가-힣ぁ-んァ-ヶ一-龠]/g, '');
+}
+
+function similarity(a: string, b: string): number {
+  if (a.length === 0 || b.length === 0) return 0;
+  const max = Math.max(a.length, b.length);
+  let same = 0;
+  const min = Math.min(a.length, b.length);
+  for (let i = 0; i < min; i += 1) {
+    if (a[i] === b[i]) same += 1;
+  }
+  return same / max;
 }
 
 function parseStatLine(line: string): OcrDraftStatRow | null {
@@ -21,7 +62,7 @@ function parseStatLine(line: string): OcrDraftStatRow | null {
 
   const confidenceBase = /%|\./.test(statValueRaw) ? 0.92 : 0.9;
   return {
-    statName: { value: statNameRaw, confidence: 0.86, normalizedValue: normalizeText(statNameRaw) },
+    statName: { value: statNameRaw, confidence: 0.86, normalizedValue: buildComparableText(statNameRaw) },
     statValue: { value: statValueRaw, confidence: confidenceBase, normalizedValue: statValueRaw },
   };
 }
@@ -39,19 +80,68 @@ export function buildOcrDraftFromLines(lines: string[]): OcrEquipmentDraft {
   };
 }
 
-function mapStatNameToMaster(statName: string, statuses: PublicMasterStatus[]): PublicMasterStatus | undefined {
+function getStatusAliases(status: PublicMasterStatus): string[] {
+  const aliases = STATUS_ALIASES[status.code] ?? [];
+  return [status.displayName, ...aliases];
+}
+
+function rankMatch(statName: string, statuses: PublicMasterStatus[]): MatchCandidate[] {
+  const raw = statName.trim();
   const normalized = normalizeText(statName);
-  return statuses.find((status) => {
-    const aliases = STATUS_ALIASES[status.code] ?? [];
-    return aliases.some((alias) => normalizeText(alias) === normalized) || normalizeText(status.displayName) === normalized;
-  });
+  const comparable = buildComparableText(statName);
+
+  const all = statuses.flatMap((status) => {
+    const aliases = getStatusAliases(status);
+    return aliases.map((alias) => {
+      const aliasNormalized = normalizeText(alias);
+      const aliasComparable = buildComparableText(alias);
+
+      if (raw === alias) return { status, matchType: 'exact' as const, confidence: 1 };
+      if (normalized === aliasNormalized) return { status, matchType: 'normalized' as const, confidence: 0.96 };
+      if (comparable === aliasComparable) return { status, matchType: 'alias' as const, confidence: 0.92 };
+      if (comparable.includes(aliasComparable) || aliasComparable.includes(comparable)) {
+        return { status, matchType: 'partial' as const, confidence: 0.75 };
+      }
+
+      const score = similarity(comparable, aliasComparable);
+      if (score >= 0.68) return { status, matchType: 'similar' as const, confidence: Number((score * 0.85).toFixed(2)) };
+      return null;
+    });
+  }).filter((item): item is MatchCandidate => item !== null);
+
+  const deduped = Array.from(
+    all.reduce((map, item) => {
+      const existing = map.get(item.status.code);
+      if (!existing || existing.confidence < item.confidence) map.set(item.status.code, item);
+      return map;
+    }, new Map<string, MatchCandidate>()).values(),
+  );
+
+  return deduped.sort((a, b) => b.confidence - a.confidence).slice(0, 3);
 }
 
 function mapRow(row: OcrDraftStatRow | undefined, statuses: PublicMasterStatus[]): OcrMappedDraftStat | undefined {
   if (!row || !row.statName) return undefined;
-  const matchedStatus = mapStatNameToMaster(row.statName.value, statuses);
-  if (!matchedStatus) return { ...row, unresolvedReason: '公開マスタへマッピングできないため手動補正が必要です。' };
-  return { ...row, matchedStatus };
+  const ranked = rankMatch(row.statName.value, statuses);
+  const best = ranked[0];
+
+  if (!best) {
+    return {
+      ...row,
+      candidateStatuses: [],
+      unresolvedReason: '公開マスタへマッピングできないため手動補正が必要です。',
+    };
+  }
+
+  const unresolvedReason = best.confidence < 0.85 ? '候補の信頼度が低いため手動補正が必要です。' : undefined;
+  return {
+    ...row,
+    matchedStatus: best.status,
+    matchType: best.matchType,
+    confidence: best.confidence,
+    candidateStatuses: ranked.map((item) => ({ code: item.status.code, displayName: item.status.displayName, matchType: item.matchType, confidence: item.confidence })),
+    unresolvedReason,
+  };
 }
 
 export function mapDraftToPublicStatuses(draft: OcrEquipmentDraft, statuses: PublicMasterStatus[]): OcrMappedDraft {

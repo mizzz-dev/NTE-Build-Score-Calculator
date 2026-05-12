@@ -4,7 +4,8 @@ import type { PublicMasterStatus } from '@/features/public-master/types';
 
 const statuses: PublicMasterStatus[] = [
   { id: '1', code: 'crit_rate', displayName: '会心率', unit: '%', statKind: 'percent', sortOrder: 1 },
-  { id: '2', code: 'attack', displayName: '攻撃力', unit: null, statKind: 'fixed', sortOrder: 2 },
+  { id: '2', code: 'atk_percent', displayName: '攻撃力%', unit: '%', statKind: 'percent', sortOrder: 2 },
+  { id: '3', code: 'crit_dmg', displayName: '会心ダメージ', unit: '%', statKind: 'percent', sortOrder: 3 },
 ];
 
 describe('OCR PoC utilities', () => {
@@ -14,11 +15,20 @@ describe('OCR PoC utilities', () => {
     expect(draft.subStats[0]?.statValue?.value).toBe('120');
   });
 
-  it('公開マスタへマッピングし、未一致項目は手動補正扱いにする', () => {
-    const draft = buildOcrDraftFromLines(['会心率 12.4%', '未知ステ 10']);
+  it('公開マスタへマッピングし、正規化・alias一致を解決できる', () => {
+    const draft = buildOcrDraftFromLines(['CRIT RATE 12.4％', 'Atk 10.2%']);
     const mapped = mapDraftToPublicStatuses(draft, statuses);
     expect(mapped.mainStat?.matchedStatus?.code).toBe('crit_rate');
-    expect(mapped.subStats[0]).toHaveProperty('unresolvedReason');
+    expect(mapped.mainStat?.matchType).toBe('normalized');
+    expect(mapped.subStats[0]?.matchedStatus?.code).toBe('atk_percent');
+    expect(mapped.subStats[0]?.candidateStatuses?.length).toBeGreaterThan(0);
+  });
+
+  it('低信頼度候補は未解決理由を付与する', () => {
+    const draft = buildOcrDraftFromLines(['会心夕メージ 20%']);
+    const mapped = mapDraftToPublicStatuses(draft, statuses);
+    expect(mapped.mainStat?.matchedStatus?.code).toBe('crit_dmg');
+    expect(mapped.mainStat?.unresolvedReason).toContain('手動補正');
   });
 
   it('候補比較で条件付き採用と保留を返す', () => {

@@ -3,7 +3,7 @@ import type { OcrEquipmentDraft, OcrMappedDraft } from './types';
 
 export const OCR_ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;
 export const OCR_MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-export const OCR_LOW_CONFIDENCE_THRESHOLD = 0.8;
+export const OCR_LOW_CONFIDENCE_THRESHOLD = 0.85;
 
 const SLOT_ALIASES: Record<SlotType, string[]> = {
   cartridge: ['cartridge', 'カートリッジ'],
@@ -65,6 +65,9 @@ export function buildScoreApplyCandidate(params: {
       key: resolveStatKey(item?.matchedStatus?.displayName ?? item?.statName?.value),
       value: item?.statValue?.value ?? '',
       requiresManual: unresolved(item?.statName?.value, item?.statName?.confidence) || unresolved(item?.statValue?.value, item?.statValue?.confidence) || Boolean(item?.unresolvedReason),
+      confidence: item?.confidence ?? 0,
+      unresolvedReason: item?.unresolvedReason,
+      matchType: item?.matchType,
     };
   });
 
@@ -74,6 +77,9 @@ export function buildScoreApplyCandidate(params: {
     mainStatValue: mainValue,
     subStats,
     requiresManualMain: unresolved(mapped.mainStat?.statName?.value, mapped.mainStat?.statName?.confidence) || unresolved(mapped.mainStat?.statValue?.value, mapped.mainStat?.statValue?.confidence) || Boolean(mapped.mainStat?.unresolvedReason),
+    mainStatConfidence: mapped.mainStat?.confidence ?? 0,
+    mainStatUnresolvedReason: mapped.mainStat?.unresolvedReason,
+    mainStatMatchType: mapped.mainStat?.matchType,
     warnings: draft.warnings,
   };
 }
