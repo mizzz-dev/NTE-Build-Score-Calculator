@@ -225,6 +225,23 @@ export function ScorePageContainer() {
   }, []);
 
 
+  const statusCandidates = useMemo(() => data?.statuses ?? [], [data?.statuses]);
+  const selectableStatKeys = useMemo(
+    () => Array.from(new Set(statusCandidates.map((s) => s.code).filter((code): code is StatKey => STAT_KEYS.includes(code as StatKey)))),
+    [statusCandidates],
+  );
+  const statKeyOptions = selectableStatKeys.length > 0 ? selectableStatKeys : STAT_KEYS;
+
+  const runDraftPipeline = useCallback((lines: string[]) => {
+    const draft = buildOcrDraftFromLines(lines);
+    const mapped = mapDraftToPublicStatuses(draft, statusCandidates);
+    const candidate = buildScoreApplyCandidate({ draft, mapped, inferredSlot: inferSlotFromText(lines) });
+    const needsReview = candidate.requiresManualMain || candidate.subStats.some((s) => s.requiresManual) || !candidate.mainStatKey;
+    setOcrDraft(candidate);
+    setOcrStatus(needsReview ? 'needs_review' : 'success');
+  }, [statusCandidates]);
+
+
   const handleSelectOcrImage = useCallback(async (file: File | null) => {
     if (!file) return;
     const validation = validateOcrImageFile(file);
@@ -503,18 +520,4 @@ export function ScorePageContainer() {
     </div>
   );
 }
-  const statusCandidates = useMemo(() => data?.statuses ?? [], [data?.statuses]);
-  const selectableStatKeys = useMemo(
-    () => Array.from(new Set(statusCandidates.map((s) => s.code).filter((code): code is StatKey => STAT_KEYS.includes(code as StatKey)))),
-    [statusCandidates],
-  );
-  const statKeyOptions = selectableStatKeys.length > 0 ? selectableStatKeys : STAT_KEYS;
 
-  const runDraftPipeline = useCallback((lines: string[]) => {
-    const draft = buildOcrDraftFromLines(lines);
-    const mapped = mapDraftToPublicStatuses(draft, statusCandidates);
-    const candidate = buildScoreApplyCandidate({ draft, mapped, inferredSlot: inferSlotFromText(lines) });
-    const needsReview = candidate.requiresManualMain || candidate.subStats.some((s) => s.requiresManual) || !candidate.mainStatKey;
-    setOcrDraft(candidate);
-    setOcrStatus(needsReview ? 'needs_review' : 'success');
-  }, [statusCandidates]);
