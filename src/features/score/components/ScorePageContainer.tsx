@@ -242,7 +242,7 @@ export function ScorePageContainer() {
       setRankingStatus('error');
       setRankingError(e instanceof Error ? e.message : 'ランキング投稿に失敗しました。');
     }
-  }, [auth.status, auth.user, mainStatKey, mainStatValue, rankingAnonymous, rankingAvailable, rankingDisplayName, result, roleId, slot, subStats]);
+  }, [auth.status, auth.user, characterId, mainStatKey, mainStatValue, rankingAnonymous, rankingAvailable, rankingDisplayName, result, roleId, slot, subStats]);
 
   return (
     <div className="space-y-6">
