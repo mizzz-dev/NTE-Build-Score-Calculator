@@ -1,3 +1,4 @@
+import type { PublicMasterStatus } from '@/features/public-master/types';
 import type { SlotType, StatKey } from '@/lib/score/types';
 import { browserStubOcrAdapter, buildLinesFromManualRawText, type OcrRunAdapter } from './adapter';
 import { buildOcrDraftFromLines, mapDraftToPublicStatuses } from './poc';
@@ -6,7 +7,7 @@ import { buildScoreApplyCandidate, inferSlotFromText, validateOcrImageFile } fro
 export type ScoreOcrStatus = 'idle' | 'processing' | 'success' | 'error' | 'needs_review';
 export type ScoreOcrCandidate = ReturnType<typeof buildScoreApplyCandidate>;
 
-export function buildScoreOcrCandidateFromLines(lines: string[], statusCandidates: Array<{ code: string; displayName: string }>): ScoreOcrCandidate {
+export function buildScoreOcrCandidateFromLines(lines: string[], statusCandidates: PublicMasterStatus[]): ScoreOcrCandidate {
   const draft = buildOcrDraftFromLines(lines);
   const mapped = mapDraftToPublicStatuses(draft, statusCandidates);
   return buildScoreApplyCandidate({ draft, mapped, inferredSlot: inferSlotFromText(lines) });
@@ -16,7 +17,7 @@ export function canApplyScoreOcrCandidate(candidate: ScoreOcrCandidate | null): 
   return Boolean(candidate) && !candidate.requiresManualMain && !candidate.subStats.some((s) => s.requiresManual);
 }
 
-export async function runScoreOcrAssist(input: { file: File; rawText: string; statusCandidates: Array<{ code: string; displayName: string }>; adapter?: OcrRunAdapter }) {
+export async function runScoreOcrAssist(input: { file: File; rawText: string; statusCandidates: PublicMasterStatus[]; adapter?: OcrRunAdapter }) {
   const validation = validateOcrImageFile(input.file);
   if (validation) return { status: 'error' as const, error: validation, candidate: null };
   const adapter = input.adapter ?? browserStubOcrAdapter;
