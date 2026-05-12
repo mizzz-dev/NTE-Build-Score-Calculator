@@ -25,4 +25,24 @@ describe('resolveScoreConfig', () => {
     expect(result.notice).not.toBeNull();
     expect(result.warnings.length).toBeGreaterThan(0);
   });
+
+  it('Supabase未設定相当(null)ではfallbackになる', () => {
+    const result = resolveScoreConfig(null);
+    expect(result.source).toBe('sample-fallback');
+    expect(result.notice).toBeNull();
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('不正なweight値混入時はfallbackになる', () => {
+    const result = resolveScoreConfig({
+      ...base,
+      data: {
+        ...base.data,
+        scoreWeights: [{ ...base.data.scoreWeights[0], weight: 'invalid-number' }],
+      },
+    });
+    expect(result.source).toBe('sample-fallback');
+    expect(result.notice).not.toBeNull();
+    expect(result.warnings.length).toBeGreaterThan(0);
+  });
 });
