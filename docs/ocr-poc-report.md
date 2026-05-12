@@ -98,3 +98,9 @@
 - 公開マスタ由来のステータス候補（`statuses[].code`）を優先して選択肢表示し、候補不足時のみ既定キーへフォールバック。
 - 低信頼度/未解決でも、ユーザーが手動補正した項目は `requiresManual=false` としてフォーム反映可能にした。
 - OCR結果/画像データを保存payload・ランキングpayload・共有URLへ含めない既存方針を維持（保存・共有関連ロジックの仕様変更なし）。
+
+## Issue #73: /score OCR責務分離（2026-05-12）
+- `ScorePageContainer` はフォーム状態保持・既存保存/共有/ランキング処理・補正済み候補反映のみを担当。
+- OCR入力補助UIは `src/features/ocr/components/ScoreOcrAssistPanel.tsx` に分離。
+- OCR実行/失敗時fallback/候補生成/反映可否判定は `src/features/ocr/lib/scoreOcrAssist.ts` に集約。
+- 方針維持: OCR結果・画像データは保存payload/ランキングpayload/共有URLに含めない。
