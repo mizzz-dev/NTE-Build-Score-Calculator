@@ -14,7 +14,8 @@ export function buildScoreOcrCandidateFromLines(lines: string[], statusCandidate
 }
 
 export function canApplyScoreOcrCandidate(candidate: ScoreOcrCandidate | null): boolean {
-  return Boolean(candidate) && !candidate.requiresManualMain && !candidate.subStats.some((s) => s.requiresManual);
+  if (!candidate) return false;
+  return !candidate.requiresManualMain && !candidate.subStats.some((s) => s.requiresManual);
 }
 
 export async function runScoreOcrAssist(input: { file: File; rawText: string; statusCandidates: PublicMasterStatus[]; adapter?: OcrRunAdapter }) {
