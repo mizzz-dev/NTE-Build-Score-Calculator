@@ -104,3 +104,14 @@
 - OCR入力補助UIは `src/features/ocr/components/ScoreOcrAssistPanel.tsx` に分離。
 - OCR実行/失敗時fallback/候補生成/反映可否判定は `src/features/ocr/lib/scoreOcrAssist.ts` に集約。
 - 方針維持: OCR結果・画像データは保存payload/ランキングpayload/共有URLに含めない。
+
+## Issue #75: 実OCRエンジン接続（/score限定, 2026-05-12）
+- `OcrRunAdapter` interfaceは維持しつつ、`createBrowserTesseractAdapter` を追加してブラウザ内OCRへ接続。
+- OCRエンジンは `import('tesseract.js')` の動的importで遅延読み込みし、通常利用時のbundle影響を最小化。
+- `/score` OCR補助UIに段階的な状態表示を追加（「OCRエンジン読み込み中」「OCR処理中」「失敗時の手動テキストfallback案内」）。
+- OCR失敗時は既存どおり手動テキスト貼り付けから一時ドラフト生成へフォールバック。
+- 維持事項: 画像はブラウザ内処理のみ・サーバー送信/永続保存なし・OCR結果/画像データを保存payload/ランキングpayload/共有URLに含めない。
+- 検証観点:
+  - 初回OCR時のみエンジン遅延読み込みが発生すること。
+  - エンジン失敗時に手動fallbackで`needs_review`候補を再生成できること。
+  - 低信頼度/未解決項目は手動補正必須のまま自動反映されないこと。

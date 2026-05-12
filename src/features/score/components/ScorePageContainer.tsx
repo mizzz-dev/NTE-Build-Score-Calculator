@@ -19,6 +19,7 @@ import { fromShareQuery, SHARE_SUB_STAT_COUNT, toShareQuery } from '../share/map
 import type { ScoreShareState } from '../share/types';
 import { ScoreOcrAssistPanel } from '@/features/ocr/components/ScoreOcrAssistPanel';
 import { applyScoreOcrCandidateToForm, canApplyScoreOcrCandidate, runScoreOcrAssist, type ScoreOcrCandidate } from '@/features/ocr/lib/scoreOcrAssist';
+import { createBrowserTesseractAdapter, type OcrProgressStatus } from '@/features/ocr/lib/adapter';
 
 const SLOT_LABELS: Record<SlotType, string> = {
   cartridge: 'カートリッジ',
@@ -68,6 +69,7 @@ export function ScorePageContainer() {
   const [ocrError, setOcrError] = useState<string | null>(null);
   const [ocrRawText, setOcrRawText] = useState<string>('');
   const [ocrDraft, setOcrDraft] = useState<ScoreOcrCandidate | null>(null);
+  const [ocrProgressStatus, setOcrProgressStatus] = useState<'idle' | OcrProgressStatus>('idle');
   const auth = useAuthState();
   const cloudEnabled = canUseCloudStorage(auth.user);
   const hasGuestHistoryForMigration = listMigrationGuestHistory().length > 0;
@@ -235,9 +237,12 @@ export function ScorePageContainer() {
   const handleSelectOcrImage = useCallback(async (file: File | null) => {
     if (!file) return;
     setOcrStatus('processing');
+    setOcrProgressStatus('loading_engine');
     setOcrError(null);
-    const result = await runScoreOcrAssist({ file, rawText: ocrRawText, statusCandidates });
+    const adapter = createBrowserTesseractAdapter((status) => setOcrProgressStatus(status));
+    const result = await runScoreOcrAssist({ file, rawText: ocrRawText, statusCandidates, adapter });
     setOcrStatus(result.status);
+    setOcrProgressStatus('idle');
     setOcrError(result.error);
     setOcrDraft(result.candidate);
   }, [ocrRawText, statusCandidates]);
@@ -297,6 +302,7 @@ export function ScorePageContainer() {
 
           <ScoreOcrAssistPanel
             status={ocrStatus}
+            progressStatus={ocrProgressStatus}
             error={ocrError}
             rawText={ocrRawText}
             candidate={ocrDraft}
@@ -464,4 +470,3 @@ export function ScorePageContainer() {
     </div>
   );
 }
-
