@@ -14,42 +14,60 @@
 - CIの `pnpm build` が `scoreOcrAssist.ts` の型不整合で失敗していることを特定した。
 - `mapDraftToPublicStatuses` が `PublicMasterStatus[]` を要求している一方で、`scoreOcrAssist.ts` 側が `Array<{ code: string; displayName: string }>` を受け取っていたため、型を `PublicMasterStatus[]` に揃えた。
 - `scoreOcrAssist.test.ts` のfixtureも `PublicMasterStatus` 形状に合わせ、`id` / `unit` / `statKind` / `sortOrder` を含むように修正した。
+- 追加のCI失敗として、`canApplyScoreOcrCandidate` 内の `Boolean(candidate) && candidate...` がTypeScriptのnull絞り込みとして扱われず、`candidate is possibly null` で失敗していることを確認した。
+- `canApplyScoreOcrCandidate` を早期return形式に変更し、`candidate` のnull判定を型安全にした。
 
 ## 判断理由
 
 - `mapDraftToPublicStatuses` は公開マスタとのマッピングを担う関数であり、既存型 `PublicMasterStatus` に依存している。
 - OCR補助側だけで簡略型を使うと、公開マスタの型定義と乖離し、今後のマッピング改善時に不整合が再発する。
 - 本PRの目的は責務分離と回帰テスト強化であり、公開マスタ型を維持する修正が最小差分かつ安全である。
+- `Boolean(candidate)` は実行時には問題ないが、TypeScriptの制御フロー解析では後続の `candidate.requiresManualMain` を安全に絞り込めないため、明示的な `if (!candidate) return false;` を採用した。
 
 ## 設計理由
 
 - OCR候補の入力型を `PublicMasterStatus[]` に統一し、公開マスタ由来ステータス候補との整合性を優先した。
 - テストfixtureは本番型を満たす最小ヘルパー `createStatus` を用意し、テストごとの重複を抑えた。
 - `mapDraftToPublicStatuses` や `PublicMasterStatus` 側の型は変更せず、既存の責務分離を崩さないようにした。
+- null判定は関数冒頭で明示し、以降の処理では `ScoreOcrCandidate` として安全に扱える構造にした。
 
 ## 発生問題
 
-### TypeScript build error
+### TypeScript build error: PublicMasterStatus不足
 
 - GitHub Actions run `25723899303` / job `75531604598` で `pnpm build` が失敗した。
 - `src/features/ocr/lib/scoreOcrAssist.ts:11` で、`Array<{ code: string; displayName: string }>` を `PublicMasterStatus[]` に渡していた。
 - `PublicMasterStatus` に必要な `id` / `unit` / `statKind` / `sortOrder` が不足していた。
+
+### TypeScript build error: null絞り込み不足
+
+- GitHub Actions run `25725735947` / job `75537898148` で `pnpm build` が失敗した。
+- `src/features/ocr/lib/scoreOcrAssist.ts:17` で `candidate` がnullの可能性ありと判定された。
+- `Boolean(candidate) && candidate.requiresManualMain` の形ではTypeScriptが安全にnullを絞り込めなかった。
 
 ## 解決方法
 
 - `scoreOcrAssist.ts` に `PublicMasterStatus` 型をimportし、`statusCandidates` の型を `PublicMasterStatus[]` に変更した。
 - `runScoreOcrAssist` の `statusCandidates` も `PublicMasterStatus[]` に変更した。
 - `scoreOcrAssist.test.ts` に `createStatus` helperを追加し、テストfixtureを `PublicMasterStatus` 型へ合わせた。
+- `canApplyScoreOcrCandidate` を以下の早期return形式に変更した。
+
+```ts
+export function canApplyScoreOcrCandidate(candidate: ScoreOcrCandidate | null): boolean {
+  if (!candidate) return false;
+  return !candidate.requiresManualMain && !candidate.subStats.some((s) => s.requiresManual);
+}
+```
 
 ## 未解決事項
 
-- 修正後commit `c267dc7e5fae49aa4cc9b47549f057c52b148a63` のCI run `25725102484` は確認時点で実行中。
+- 修正後commit `304bd0c81fe9f3480c7e9c5f1b6755a9f04d96a4` のCIは確認待ち。
 - CI成功後にPR #74をマージし、Issue #73へ完了コメントを残す必要がある。
 - 今回のPRでは実OCRエンジン接続、外部OCR API連携、画像のサーバー保存、DB migration、保存payload仕様変更は行わない。
 
 ## 次回作業内容
 
-- CI run `25725102484` の完了を確認する。
+- 修正後CIの完了を確認する。
 - `pnpm lint` / `pnpm build` / 既存テストが成功したらPR #74をマージする。
 - マージ後、Issue #73に完了コメントを追加し `completed` でクローズする。
 - 次フェーズでは、ブラウザ内OCRエンジンの遅延読み込み接続に進むか、OCRマッピング精度改善に進むかを判断する。
@@ -76,13 +94,15 @@ refactor-ocr-input-assist-for-separation-of-concerns
 
 原因:
 src/features/ocr/lib/scoreOcrAssist.ts で mapDraftToPublicStatuses(draft, statusCandidates) を呼び出していますが、statusCandidates が Array<{ code: string; displayName: string }> として定義されており、PublicMasterStatus[] に必要な id / unit / statKind / sortOrder が不足しています。
+また、canApplyScoreOcrCandidate で Boolean(candidate) && candidate... の形を使うと、TypeScriptが candidate のnullを安全に絞り込めず build で失敗します。
 
 対応内容:
 1. scoreOcrAssist.ts に PublicMasterStatus 型をimportする。
 2. buildScoreOcrCandidateFromLines の statusCandidates を PublicMasterStatus[] に変更する。
 3. runScoreOcrAssist の input.statusCandidates を PublicMasterStatus[] に変更する。
 4. scoreOcrAssist.test.ts のfixtureを PublicMasterStatus 形状に合わせる。
-5. mapDraftToPublicStatuses や PublicMasterStatus 型定義は変更しない。
+5. canApplyScoreOcrCandidate は if (!candidate) return false; の早期returnでnullを明示的に絞り込む。
+6. mapDraftToPublicStatuses や PublicMasterStatus 型定義は変更しない。
 
 完了条件:
 - pnpm lint が成功する。
