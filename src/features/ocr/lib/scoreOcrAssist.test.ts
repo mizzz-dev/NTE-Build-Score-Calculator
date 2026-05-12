@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest';
+import type { PublicMasterStatus } from '@/features/public-master/types';
 import { applyScoreOcrCandidateToForm, canApplyScoreOcrCandidate, runScoreOcrAssist } from './scoreOcrAssist';
+
+function createStatus(code: string, displayName: string): PublicMasterStatus {
+  return {
+    id: `status-${code}`,
+    code,
+    displayName,
+    unit: null,
+    statKind: 'percent',
+    sortOrder: 0,
+  };
+}
 
 describe('scoreOcrAssist', () => {
   it('stub OCR失敗時は手動テキストfallbackで候補生成する', async () => {
@@ -8,8 +20,8 @@ describe('scoreOcrAssist', () => {
       file,
       rawText: 'モジュール\n攻撃力% 12.3%\n会心率 8.2%',
       statusCandidates: [
-        { code: 'atk_percent', displayName: '攻撃力%' },
-        { code: 'crit_rate', displayName: '会心率' },
+        createStatus('atk_percent', '攻撃力%'),
+        createStatus('crit_rate', '会心率'),
       ],
       adapter: { name: 'failing', run: async () => { throw new Error('failed'); } },
     });
@@ -23,7 +35,7 @@ describe('scoreOcrAssist', () => {
     const result = await runScoreOcrAssist({
       file,
       rawText: '攻撃力% 12.3%\n?? 8.2%',
-      statusCandidates: [{ code: 'atk_percent', displayName: '攻撃力%' }],
+      statusCandidates: [createStatus('atk_percent', '攻撃力%')],
       adapter: { name: 'failing', run: async () => { throw new Error('failed'); } },
     });
     expect(canApplyScoreOcrCandidate(result.candidate)).toBe(false);
