@@ -17,9 +17,8 @@ import { createRankingPayloadSnapshot, createScorePayload, parseSubStats } from 
 import type { GuestHistoryEntry } from '@/features/history/types';
 import { fromShareQuery, SHARE_SUB_STAT_COUNT, toShareQuery } from '../share/mapper';
 import type { ScoreShareState } from '../share/types';
-import { buildOcrDraftFromLines, mapDraftToPublicStatuses } from '@/features/ocr/lib/poc';
-import { buildScoreApplyCandidate, inferSlotFromText, validateOcrImageFile } from '@/features/ocr/lib/scoreOcrDraft';
-import { browserStubOcrAdapter, buildLinesFromManualRawText } from '@/features/ocr/lib/adapter';
+import { ScoreOcrAssistPanel } from '@/features/ocr/components/ScoreOcrAssistPanel';
+import { applyScoreOcrCandidateToForm, canApplyScoreOcrCandidate, runScoreOcrAssist, type ScoreOcrCandidate } from '@/features/ocr/lib/scoreOcrAssist';
 
 const SLOT_LABELS: Record<SlotType, string> = {
   cartridge: 'カートリッジ',
@@ -68,7 +67,7 @@ export function ScorePageContainer() {
   const [ocrStatus, setOcrStatus] = useState<'idle' | 'processing' | 'success' | 'error' | 'needs_review'>('idle');
   const [ocrError, setOcrError] = useState<string | null>(null);
   const [ocrRawText, setOcrRawText] = useState<string>('');
-  const [ocrDraft, setOcrDraft] = useState<ReturnType<typeof buildScoreApplyCandidate> | null>(null);
+  const [ocrDraft, setOcrDraft] = useState<ScoreOcrCandidate | null>(null);
   const auth = useAuthState();
   const cloudEnabled = canUseCloudStorage(auth.user);
   const hasGuestHistoryForMigration = listMigrationGuestHistory().length > 0;
@@ -232,63 +231,25 @@ export function ScorePageContainer() {
   );
   const statKeyOptions = selectableStatKeys.length > 0 ? selectableStatKeys : STAT_KEYS;
 
-  const runDraftPipeline = useCallback((lines: string[]) => {
-    const draft = buildOcrDraftFromLines(lines);
-    const mapped = mapDraftToPublicStatuses(draft, statusCandidates);
-    const candidate = buildScoreApplyCandidate({ draft, mapped, inferredSlot: inferSlotFromText(lines) });
-    const needsReview = candidate.requiresManualMain || candidate.subStats.some((s) => s.requiresManual) || !candidate.mainStatKey;
-    setOcrDraft(candidate);
-    setOcrStatus(needsReview ? 'needs_review' : 'success');
-  }, [statusCandidates]);
-
 
   const handleSelectOcrImage = useCallback(async (file: File | null) => {
     if (!file) return;
-    const validation = validateOcrImageFile(file);
-    if (validation) {
-      setOcrStatus('error');
-      setOcrError(validation);
-      return;
-    }
     setOcrStatus('processing');
     setOcrError(null);
-    try {
-      const result = await browserStubOcrAdapter.run(file);
-      runDraftPipeline(result.lines);
-    } catch (error) {
-      const manualLines = buildLinesFromManualRawText(ocrRawText);
-      if (manualLines.length === 0) {
-        setOcrStatus('error');
-        setOcrError(error instanceof Error ? error.message : 'OCR処理に失敗しました。');
-        return;
-      }
-      runDraftPipeline(manualLines);
-      setOcrStatus('needs_review');
-      setOcrError('画像OCRは未導入のため、貼り付けテキストからドラフトを生成しました。');
-    }
-  }, [ocrRawText, runDraftPipeline]);
+    const result = await runScoreOcrAssist({ file, rawText: ocrRawText, statusCandidates });
+    setOcrStatus(result.status);
+    setOcrError(result.error);
+    setOcrDraft(result.candidate);
+  }, [ocrRawText, statusCandidates]);
 
   const handleApplyOcrDraft = useCallback(() => {
-    if (!ocrDraft) return;
-    if (ocrDraft.requiresManualMain || ocrDraft.subStats.some((s) => s.requiresManual)) return;
-    if (ocrDraft.slot) setSlot(ocrDraft.slot);
-    if (ocrDraft.mainStatKey) setMainStatKey(ocrDraft.mainStatKey);
-    if (ocrDraft.mainStatValue) setMainStatValue(ocrDraft.mainStatValue.replace('%', ''));
-    setSubStats((prev) => prev.map((item, index) => ({
-      key: ocrDraft.subStats[index]?.key ?? item.key,
-      value: (ocrDraft.subStats[index]?.value ?? '').replace('%', ''),
-    })));
-  }, [ocrDraft]);
-
-  const handleUpdateOcrSubStat = useCallback((index: number, key: StatKey | undefined, value: string) => {
-    setOcrDraft((prev) => {
-      if (!prev) return prev;
-      const next = [...prev.subStats];
-      next[index] = { ...next[index], key, value, requiresManual: false };
-      return { ...prev, subStats: next };
-    });
-  }, []);
-
+    if (!ocrDraft || !canApplyScoreOcrCandidate(ocrDraft)) return;
+    const next = applyScoreOcrCandidateToForm(ocrDraft, { slot, mainStatKey, mainStatValue, subStats });
+    setSlot(next.slot);
+    setMainStatKey(next.mainStatKey);
+    setMainStatValue(next.mainStatValue);
+    setSubStats(next.subStats);
+  }, [mainStatKey, mainStatValue, ocrDraft, slot, subStats]);
   const handlePostRanking = useCallback(async () => {
     if (!result || !auth.user || auth.status !== 'signed_in' || !rankingAvailable) return;
     if (!rankingAnonymous && rankingDisplayName.trim().length === 0) {
@@ -334,34 +295,17 @@ export function ScorePageContainer() {
           </div>
 
 
-          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-3 space-y-2">
-            <p className="text-sm font-medium">OCR入力補助（/score限定）</p>
-            <p className="text-xs text-[var(--color-text-secondary)]">画像はブラウザ内のみで処理し、サーバー保存しません。OCR結果は一時ドラフトです。</p>
-            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => handleSelectOcrImage(e.target.files?.[0] ?? null)} className="text-xs" />
-            <textarea className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-xs" rows={3} placeholder="OCR生テキスト行を貼り付け（PoC連携）" value={ocrRawText} onChange={(e) => setOcrRawText(e.target.value)} />
-            {ocrStatus === 'processing' && <p className="text-xs text-[var(--color-text-secondary)]">OCR処理中...</p>}
-            {ocrError && <p className="text-xs text-[var(--color-danger)]">{ocrError}</p>}
-            {ocrDraft && (
-              <div className="text-xs space-y-1 rounded border border-[var(--color-border)] p-2">
-                <label className="block">装備タイプ
-                  <select className="ml-2 rounded border border-[var(--color-border)]" value={ocrDraft.slot ?? ''} onChange={(e) => setOcrDraft((prev) => prev ? ({ ...prev, slot: (e.target.value || undefined) as SlotType | undefined }) : prev)}>
-                    <option value="">未解決</option>
-                    {Object.entries(SLOT_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                  </select>
-                </label>
-                <div className="grid grid-cols-2 gap-1">
-                  <select className="rounded border border-[var(--color-border)]" value={ocrDraft.mainStatKey ?? ''} onChange={(e) => setOcrDraft((prev) => prev ? ({ ...prev, mainStatKey: (e.target.value || undefined) as StatKey | undefined, requiresManualMain: false }) : prev)}>
-                    <option value="">メインキー未解決</option>
-                    {statKeyOptions.map((key) => <option key={key} value={key}>{key}</option>)}
-                  </select>
-                  <input className="rounded border border-[var(--color-border)] px-1" value={ocrDraft.mainStatValue ?? ''} onChange={(e) => setOcrDraft((prev) => prev ? ({ ...prev, mainStatValue: e.target.value, requiresManualMain: false }) : prev)} placeholder="メイン値" />
-                </div>
-                {ocrDraft.subStats.map((sub, idx) => <div key={idx} className="grid grid-cols-2 gap-1"><select className="rounded border border-[var(--color-border)]" value={sub.key ?? ''} onChange={(e) => handleUpdateOcrSubStat(idx, (e.target.value || undefined) as StatKey | undefined, sub.value)}><option value="">サブ{idx + 1}キー未解決</option>{statKeyOptions.map((key) => <option key={key} value={key}>{key}</option>)}</select><input className="rounded border border-[var(--color-border)] px-1" value={sub.value} placeholder={`サブ${idx + 1}値`} onChange={(e) => handleUpdateOcrSubStat(idx, sub.key, e.target.value)} /></div>)}
-                {ocrDraft.warnings.map((warning) => <p key={warning} className="text-[var(--color-danger)]">{warning}</p>)}
-                <button type="button" className="rounded-md border border-[var(--color-border)] px-2 py-1 disabled:opacity-50" onClick={handleApplyOcrDraft} disabled={ocrDraft.requiresManualMain || ocrDraft.subStats.some((s) => s.requiresManual)}>フォームへ反映</button>
-              </div>
-            )}
-          </div>
+          <ScoreOcrAssistPanel
+            status={ocrStatus}
+            error={ocrError}
+            rawText={ocrRawText}
+            candidate={ocrDraft}
+            statKeyOptions={statKeyOptions}
+            onRawTextChange={setOcrRawText}
+            onSelectImage={handleSelectOcrImage}
+            onUpdateCandidate={setOcrDraft}
+            onApplyCandidate={handleApplyOcrDraft}
+          />
 
           <label className="block text-sm">
             ロール
