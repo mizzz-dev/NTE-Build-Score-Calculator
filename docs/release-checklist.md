@@ -19,6 +19,9 @@
 - [ ] `/compare` の A/B 入力フォーム状態が比較計算後も保持される
 - [ ] 保存系 payload に access token / secret / service role key / email など不要情報が含まれない
 - [ ] 保存系 payload に巨大な ScoreConfig 全体が含まれない
+- [ ] OCR導入時に画像データをサーバー永続保存しない設計であることを確認
+- [ ] OCR導入時に保存/共有/ランキング payload へOCRメタ情報（raw text・confidence等）を含めないことを確認
+- [ ] OCR導入時に低信頼度項目の手動補正導線とエラー表示を確認
 
 ## 3. 非機能
 - [ ] SEO設定（title/description/OGP）
