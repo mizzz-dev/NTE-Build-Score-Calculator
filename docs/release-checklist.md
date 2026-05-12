@@ -12,6 +12,13 @@
 - [ ] E2Eテスト完了
 - [ ] レスポンシブ確認完了
 - [ ] 本番ビルド確認完了
+- [ ] 公開マスタ取得成功時に `/score` `/card` `/compare` が同一の ScoreConfig で計算される
+- [ ] Supabase未設定など公開マスタfallback時に `/score` `/card` `/compare` がクラッシュしない
+- [ ] `/score` の共有URL復元・ゲスト履歴保存・クラウド保存・ランキング投稿の payload 互換性が維持される
+- [ ] `/card` の PNG 保存導線・ゲスト履歴保存・クラウド保存の payload 互換性が維持される
+- [ ] `/compare` の A/B 入力フォーム状態が比較計算後も保持される
+- [ ] 保存系 payload に access token / secret / service role key / email など不要情報が含まれない
+- [ ] 保存系 payload に巨大な ScoreConfig 全体が含まれない
 
 ## 3. 非機能
 - [ ] SEO設定（title/description/OGP）

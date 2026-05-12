@@ -13,6 +13,7 @@ import type { GuestHistoryEntry } from '@/features/history/types';
 import { exportElementToPng } from '../lib/cardImage';
 import { usePublicMaster } from '@/features/public-master/usePublicMaster';
 import { resolveScoreConfig } from '@/features/score/lib/scoreConfigResolver';
+import { createCardPayload } from '@/features/score/lib/payloadBuilders';
 
 const SLOT_LABELS: Record<SlotType, string> = { cartridge: 'カートリッジ', module: 'モジュール', gear: 'ギア', console: 'コンソール' };
 const DEFAULT_STAT_KEYS: StatKey[] = ['atk_percent', 'crit_rate', 'crit_dmg', 'hp_flat'];
@@ -102,22 +103,13 @@ export function CardPageContainer() {
 
   const handleSaveHistory = () => {
     if (!result) return;
-    const mainValue = Number(mainStatValue);
-    if (Number.isNaN(mainValue)) return;
-    const parsedSubStats = subStats.filter((s) => s.value.trim().length > 0).map((s) => ({ key: s.key, value: Number(s.value) })).filter((s) => !Number.isNaN(s.value));
+    const payload = createCardPayload({ roleId, slot, mainStatKey, mainStatValue, subStats }, result.buildScoreNormalized, result.rank);
+    if (Number.isNaN(payload.mainStatValue)) return;
     const next = saveGuestHistory({
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       kind: 'card',
       createdAt: new Date().toISOString(),
-      payload: {
-        roleId,
-        slot,
-        mainStatKey,
-        mainStatValue: mainValue,
-        subStats: parsedSubStats,
-        score: result.buildScoreNormalized,
-        rank: result.rank,
-      },
+      payload,
     });
     setHistory(next.filter((entry) => entry.kind === 'card'));
     setHistorySaveStatus('success');
@@ -128,9 +120,8 @@ export function CardPageContainer() {
     try {
       setCloudSaveStatus('saving');
       setCloudError(null);
-      const mainValue = Number(mainStatValue);
-      const parsedSubStats = subStats.filter((s) => s.value.trim().length > 0).map((s) => ({ key: s.key, value: Number(s.value) })).filter((s) => !Number.isNaN(s.value));
-      await saveCloudHistory(auth.user, { kind: 'card', payload: { roleId, slot, mainStatKey, mainStatValue: mainValue, subStats: parsedSubStats, score: result.buildScoreNormalized, rank: result.rank } });
+      const payload = createCardPayload({ roleId, slot, mainStatKey, mainStatValue, subStats }, result.buildScoreNormalized, result.rank);
+      await saveCloudHistory(auth.user, { kind: 'card', payload });
       setCloudHistory(await listCloudHistory(auth.user));
       setCloudSaveStatus('success');
     } catch (e) {

@@ -13,6 +13,7 @@ import { useAuthState } from '@/features/auth/AuthProvider';
 import { createRankingEntry, isRankingAvailable } from '@/features/ranking/api';
 import { usePublicMaster } from '@/features/public-master/usePublicMaster';
 import { resolveScoreConfig } from '@/features/score/lib/scoreConfigResolver';
+import { createRankingPayloadSnapshot, createScorePayload, parseSubStats } from '@/features/score/lib/payloadBuilders';
 import type { GuestHistoryEntry } from '@/features/history/types';
 import { fromShareQuery, SHARE_SUB_STAT_COUNT, toShareQuery } from '../share/mapper';
 import type { ScoreShareState } from '../share/types';
@@ -113,10 +114,7 @@ export function ScorePageContainer() {
     const mainValue = Number(mainStatValue);
     if (Number.isNaN(mainValue)) return null;
 
-    const parsedSubStats = subStats
-      .filter((sub) => sub.value.trim().length > 0)
-      .map((sub) => ({ key: sub.key, value: Number(sub.value) }))
-      .filter((sub) => !Number.isNaN(sub.value));
+    const parsedSubStats = parseSubStats(subStats);
 
     return calculateBuildScore(
       {
@@ -137,27 +135,14 @@ export function ScorePageContainer() {
 
   const handleSaveHistory = useCallback(() => {
     if (!result) return;
-    const mainValue = Number(mainStatValue);
-    if (Number.isNaN(mainValue)) return;
-    const parsedSubStats = subStats
-      .filter((sub) => sub.value.trim().length > 0)
-      .map((sub) => ({ key: sub.key, value: Number(sub.value) }))
-      .filter((sub) => !Number.isNaN(sub.value));
+    const payload = createScorePayload({ roleId, characterId, slot, mainStatKey, mainStatValue, subStats }, result.buildScoreNormalized, result.rank);
+    if (Number.isNaN(payload.mainStatValue)) return;
 
     const next = saveGuestHistory({
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       kind: 'score',
       createdAt: new Date().toISOString(),
-      payload: {
-        roleId,
-        characterId: characterId || undefined,
-        slot,
-        mainStatKey,
-        mainStatValue: mainValue,
-        subStats: parsedSubStats,
-        score: result.buildScoreNormalized,
-        rank: result.rank,
-      },
+      payload,
     });
     setHistory(next.filter((entry) => entry.kind === 'score'));
     setSaveStatus('success');
@@ -186,11 +171,10 @@ export function ScorePageContainer() {
     try {
       setCloudStatus('saving');
       setCloudError(null);
-      const mainValue = Number(mainStatValue);
-      const parsedSubStats = subStats.filter((sub) => sub.value.trim().length > 0).map((sub) => ({ key: sub.key, value: Number(sub.value) })).filter((sub) => !Number.isNaN(sub.value));
+      const payload = createScorePayload({ roleId, characterId, slot, mainStatKey, mainStatValue, subStats }, result.buildScoreNormalized, result.rank);
       await saveCloudHistory(auth.user, {
         kind: 'score',
-        payload: { roleId, characterId: characterId || undefined, slot, mainStatKey, mainStatValue: mainValue, subStats: parsedSubStats, score: result.buildScoreNormalized, rank: result.rank },
+        payload,
       });
       const items = await listCloudHistory(auth.user);
       setCloudHistory(items);
@@ -251,15 +235,7 @@ export function ScorePageContainer() {
         equipmentType: slot,
         scoreTotal: result.buildScoreNormalized,
         scoreRank: result.rank,
-        payloadSnapshot: {
-          roleId,
-          slot,
-          score: result.buildScoreNormalized,
-          rank: result.rank,
-          mainStatKey,
-          mainStatValue: Number(mainStatValue),
-          subStats: subStats.filter((sub) => sub.value.trim().length > 0).map((sub) => ({ key: sub.key, value: Number(sub.value) })).filter((sub) => !Number.isNaN(sub.value)),
-        },
+        payloadSnapshot: createRankingPayloadSnapshot({ roleId, characterId, slot, mainStatKey, mainStatValue, subStats }, result.buildScoreNormalized, result.rank),
       });
       setRankingStatus('success');
     } catch (e) {
