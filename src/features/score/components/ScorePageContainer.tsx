@@ -17,6 +17,8 @@ import { createRankingPayloadSnapshot, createScorePayload, parseSubStats } from 
 import type { GuestHistoryEntry } from '@/features/history/types';
 import { fromShareQuery, SHARE_SUB_STAT_COUNT, toShareQuery } from '../share/mapper';
 import type { ScoreShareState } from '../share/types';
+import { buildOcrDraftFromLines, mapDraftToPublicStatuses } from '@/features/ocr/lib/poc';
+import { buildScoreApplyCandidate, inferSlotFromText, validateOcrImageFile } from '@/features/ocr/lib/scoreOcrDraft';
 
 const SLOT_LABELS: Record<SlotType, string> = {
   cartridge: 'カートリッジ',
@@ -62,6 +64,10 @@ export function ScorePageContainer() {
   const [rankingAnonymous, setRankingAnonymous] = useState<boolean>(true);
   const [rankingStatus, setRankingStatus] = useState<'idle'|'posting'|'success'|'error'>('idle');
   const [rankingError, setRankingError] = useState<string | null>(null);
+  const [ocrStatus, setOcrStatus] = useState<'idle' | 'processing' | 'success' | 'error' | 'needs_review'>('idle');
+  const [ocrError, setOcrError] = useState<string | null>(null);
+  const [ocrRawText, setOcrRawText] = useState<string>('');
+  const [ocrDraft, setOcrDraft] = useState<ReturnType<typeof buildScoreApplyCandidate> | null>(null);
   const auth = useAuthState();
   const cloudEnabled = canUseCloudStorage(auth.user);
   const hasGuestHistoryForMigration = listMigrationGuestHistory().length > 0;
@@ -217,6 +223,45 @@ export function ScorePageContainer() {
     setHistory(next.filter((entry) => entry.kind === 'score'));
   }, []);
 
+
+  const handleSelectOcrImage = useCallback((file: File | null) => {
+    if (!file) return;
+    const validation = validateOcrImageFile(file);
+    if (validation) {
+      setOcrStatus('error');
+      setOcrError(validation);
+      return;
+    }
+    setOcrStatus('processing');
+    setOcrError(null);
+    queueMicrotask(() => {
+      const lines = ocrRawText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      if (lines.length === 0) {
+        setOcrStatus('error');
+        setOcrError('OCR生テキストが空です。Issue #69 の初期実装ではOCR結果貼り付けが必要です。');
+        return;
+      }
+      const draft = buildOcrDraftFromLines(lines);
+      const mapped = mapDraftToPublicStatuses(draft, data?.statuses ?? []);
+      const candidate = buildScoreApplyCandidate({ draft, mapped, inferredSlot: inferSlotFromText(lines) });
+      const needsReview = candidate.requiresManualMain || candidate.subStats.some((s) => s.requiresManual) || !candidate.mainStatKey;
+      setOcrDraft(candidate);
+      setOcrStatus(needsReview ? 'needs_review' : 'success');
+    });
+  }, [data?.statuses, ocrRawText]);
+
+  const handleApplyOcrDraft = useCallback(() => {
+    if (!ocrDraft) return;
+    if (ocrDraft.requiresManualMain || ocrDraft.subStats.some((s) => s.requiresManual)) return;
+    if (ocrDraft.slot) setSlot(ocrDraft.slot);
+    if (ocrDraft.mainStatKey) setMainStatKey(ocrDraft.mainStatKey);
+    if (ocrDraft.mainStatValue) setMainStatValue(ocrDraft.mainStatValue.replace('%', ''));
+    setSubStats((prev) => prev.map((item, index) => ({
+      key: ocrDraft.subStats[index]?.key ?? item.key,
+      value: (ocrDraft.subStats[index]?.value ?? '').replace('%', ''),
+    })));
+  }, [ocrDraft]);
+
   const handlePostRanking = useCallback(async () => {
     if (!result || !auth.user || auth.status !== 'signed_in' || !rankingAvailable) return;
     if (!rankingAnonymous && rankingDisplayName.trim().length === 0) {
@@ -259,6 +304,25 @@ export function ScorePageContainer() {
             </div>
             {copyStatus === 'success' && <p className="text-xs text-[var(--color-accent)]">共有URLをコピーしました。</p>}
             {copyStatus === 'error' && <p className="text-xs text-[var(--color-danger)]">コピーに失敗しました。URLを手動でコピーしてください。</p>}
+          </div>
+
+
+          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-3 space-y-2">
+            <p className="text-sm font-medium">OCR入力補助（/score限定）</p>
+            <p className="text-xs text-[var(--color-text-secondary)]">画像はブラウザ内のみで処理し、サーバー保存しません。OCR結果は一時ドラフトです。</p>
+            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => handleSelectOcrImage(e.target.files?.[0] ?? null)} className="text-xs" />
+            <textarea className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-xs" rows={3} placeholder="OCR生テキスト行を貼り付け（PoC連携）" value={ocrRawText} onChange={(e) => setOcrRawText(e.target.value)} />
+            {ocrStatus === 'processing' && <p className="text-xs text-[var(--color-text-secondary)]">OCR処理中...</p>}
+            {ocrError && <p className="text-xs text-[var(--color-danger)]">{ocrError}</p>}
+            {ocrDraft && (
+              <div className="text-xs space-y-1 rounded border border-[var(--color-border)] p-2">
+                <p>装備タイプ候補: {ocrDraft.slot ?? '未解決'}</p>
+                <p>メイン候補: {ocrDraft.mainStatKey ?? '未解決'} / {ocrDraft.mainStatValue ?? '未解決'} {ocrDraft.requiresManualMain ? '(手動補正必須)' : ''}</p>
+                {ocrDraft.subStats.map((sub, idx) => <p key={idx}>サブ{idx + 1}: {sub.key ?? '未解決'} / {sub.value || '未解決'} {sub.requiresManual ? '(手動補正必須)' : ''}</p>)}
+                {ocrDraft.warnings.map((warning) => <p key={warning} className="text-[var(--color-danger)]">{warning}</p>)}
+                <button type="button" className="rounded-md border border-[var(--color-border)] px-2 py-1 disabled:opacity-50" onClick={handleApplyOcrDraft} disabled={ocrDraft.requiresManualMain || ocrDraft.subStats.some((s) => s.requiresManual)}>フォームへ反映</button>
+              </div>
+            )}
           </div>
 
           <label className="block text-sm">
