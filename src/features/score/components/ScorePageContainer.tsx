@@ -19,6 +19,7 @@ import { fromShareQuery, SHARE_SUB_STAT_COUNT, toShareQuery } from '../share/map
 import type { ScoreShareState } from '../share/types';
 import { buildOcrDraftFromLines, mapDraftToPublicStatuses } from '@/features/ocr/lib/poc';
 import { buildScoreApplyCandidate, inferSlotFromText, validateOcrImageFile } from '@/features/ocr/lib/scoreOcrDraft';
+import { browserStubOcrAdapter, buildLinesFromManualRawText } from '@/features/ocr/lib/adapter';
 
 const SLOT_LABELS: Record<SlotType, string> = {
   cartridge: 'カートリッジ',
@@ -224,7 +225,24 @@ export function ScorePageContainer() {
   }, []);
 
 
-  const handleSelectOcrImage = useCallback((file: File | null) => {
+  const statusCandidates = useMemo(() => data?.statuses ?? [], [data?.statuses]);
+  const selectableStatKeys = useMemo(
+    () => Array.from(new Set(statusCandidates.map((s) => s.code).filter((code): code is StatKey => STAT_KEYS.includes(code as StatKey)))),
+    [statusCandidates],
+  );
+  const statKeyOptions = selectableStatKeys.length > 0 ? selectableStatKeys : STAT_KEYS;
+
+  const runDraftPipeline = useCallback((lines: string[]) => {
+    const draft = buildOcrDraftFromLines(lines);
+    const mapped = mapDraftToPublicStatuses(draft, statusCandidates);
+    const candidate = buildScoreApplyCandidate({ draft, mapped, inferredSlot: inferSlotFromText(lines) });
+    const needsReview = candidate.requiresManualMain || candidate.subStats.some((s) => s.requiresManual) || !candidate.mainStatKey;
+    setOcrDraft(candidate);
+    setOcrStatus(needsReview ? 'needs_review' : 'success');
+  }, [statusCandidates]);
+
+
+  const handleSelectOcrImage = useCallback(async (file: File | null) => {
     if (!file) return;
     const validation = validateOcrImageFile(file);
     if (validation) {
@@ -234,21 +252,21 @@ export function ScorePageContainer() {
     }
     setOcrStatus('processing');
     setOcrError(null);
-    queueMicrotask(() => {
-      const lines = ocrRawText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-      if (lines.length === 0) {
+    try {
+      const result = await browserStubOcrAdapter.run(file);
+      runDraftPipeline(result.lines);
+    } catch (error) {
+      const manualLines = buildLinesFromManualRawText(ocrRawText);
+      if (manualLines.length === 0) {
         setOcrStatus('error');
-        setOcrError('OCR生テキストが空です。Issue #69 の初期実装ではOCR結果貼り付けが必要です。');
+        setOcrError(error instanceof Error ? error.message : 'OCR処理に失敗しました。');
         return;
       }
-      const draft = buildOcrDraftFromLines(lines);
-      const mapped = mapDraftToPublicStatuses(draft, data?.statuses ?? []);
-      const candidate = buildScoreApplyCandidate({ draft, mapped, inferredSlot: inferSlotFromText(lines) });
-      const needsReview = candidate.requiresManualMain || candidate.subStats.some((s) => s.requiresManual) || !candidate.mainStatKey;
-      setOcrDraft(candidate);
-      setOcrStatus(needsReview ? 'needs_review' : 'success');
-    });
-  }, [data?.statuses, ocrRawText]);
+      runDraftPipeline(manualLines);
+      setOcrStatus('needs_review');
+      setOcrError('画像OCRは未導入のため、貼り付けテキストからドラフトを生成しました。');
+    }
+  }, [ocrRawText, runDraftPipeline]);
 
   const handleApplyOcrDraft = useCallback(() => {
     if (!ocrDraft) return;
@@ -261,6 +279,15 @@ export function ScorePageContainer() {
       value: (ocrDraft.subStats[index]?.value ?? '').replace('%', ''),
     })));
   }, [ocrDraft]);
+
+  const handleUpdateOcrSubStat = useCallback((index: number, key: StatKey | undefined, value: string) => {
+    setOcrDraft((prev) => {
+      if (!prev) return prev;
+      const next = [...prev.subStats];
+      next[index] = { ...next[index], key, value, requiresManual: false };
+      return { ...prev, subStats: next };
+    });
+  }, []);
 
   const handlePostRanking = useCallback(async () => {
     if (!result || !auth.user || auth.status !== 'signed_in' || !rankingAvailable) return;
@@ -316,9 +343,20 @@ export function ScorePageContainer() {
             {ocrError && <p className="text-xs text-[var(--color-danger)]">{ocrError}</p>}
             {ocrDraft && (
               <div className="text-xs space-y-1 rounded border border-[var(--color-border)] p-2">
-                <p>装備タイプ候補: {ocrDraft.slot ?? '未解決'}</p>
-                <p>メイン候補: {ocrDraft.mainStatKey ?? '未解決'} / {ocrDraft.mainStatValue ?? '未解決'} {ocrDraft.requiresManualMain ? '(手動補正必須)' : ''}</p>
-                {ocrDraft.subStats.map((sub, idx) => <p key={idx}>サブ{idx + 1}: {sub.key ?? '未解決'} / {sub.value || '未解決'} {sub.requiresManual ? '(手動補正必須)' : ''}</p>)}
+                <label className="block">装備タイプ
+                  <select className="ml-2 rounded border border-[var(--color-border)]" value={ocrDraft.slot ?? ''} onChange={(e) => setOcrDraft((prev) => prev ? ({ ...prev, slot: (e.target.value || undefined) as SlotType | undefined }) : prev)}>
+                    <option value="">未解決</option>
+                    {Object.entries(SLOT_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                </label>
+                <div className="grid grid-cols-2 gap-1">
+                  <select className="rounded border border-[var(--color-border)]" value={ocrDraft.mainStatKey ?? ''} onChange={(e) => setOcrDraft((prev) => prev ? ({ ...prev, mainStatKey: (e.target.value || undefined) as StatKey | undefined, requiresManualMain: false }) : prev)}>
+                    <option value="">メインキー未解決</option>
+                    {statKeyOptions.map((key) => <option key={key} value={key}>{key}</option>)}
+                  </select>
+                  <input className="rounded border border-[var(--color-border)] px-1" value={ocrDraft.mainStatValue ?? ''} onChange={(e) => setOcrDraft((prev) => prev ? ({ ...prev, mainStatValue: e.target.value, requiresManualMain: false }) : prev)} placeholder="メイン値" />
+                </div>
+                {ocrDraft.subStats.map((sub, idx) => <div key={idx} className="grid grid-cols-2 gap-1"><select className="rounded border border-[var(--color-border)]" value={sub.key ?? ''} onChange={(e) => handleUpdateOcrSubStat(idx, (e.target.value || undefined) as StatKey | undefined, sub.value)}><option value="">サブ{idx + 1}キー未解決</option>{statKeyOptions.map((key) => <option key={key} value={key}>{key}</option>)}</select><input className="rounded border border-[var(--color-border)] px-1" value={sub.value} placeholder={`サブ${idx + 1}値`} onChange={(e) => handleUpdateOcrSubStat(idx, sub.key, e.target.value)} /></div>)}
                 {ocrDraft.warnings.map((warning) => <p key={warning} className="text-[var(--color-danger)]">{warning}</p>)}
                 <button type="button" className="rounded-md border border-[var(--color-border)] px-2 py-1 disabled:opacity-50" onClick={handleApplyOcrDraft} disabled={ocrDraft.requiresManualMain || ocrDraft.subStats.some((s) => s.requiresManual)}>フォームへ反映</button>
               </div>
@@ -482,3 +520,4 @@ export function ScorePageContainer() {
     </div>
   );
 }
+
