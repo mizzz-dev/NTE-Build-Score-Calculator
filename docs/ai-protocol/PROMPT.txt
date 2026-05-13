@@ -1,0 +1,23 @@
+NTE-Build-Score-Calculator向け AI開発プロトコル（Level 3）
+
+このプロンプトは、商用・本番運用を見据えた開発統制のために使用する。
+対象Issueと作業内容を明記してAIへ渡すこと。
+
+必須ルール:
+- 日本語で出力する。
+- PR本文、Issue本文・コメント、Discussion本文・コメント、commit message、作業ログ、AIプロンプトログ、ADR、handoffは日本語で記載する。
+- 本Repositoryは非公式ファンツール。公式と誤認させない。
+- 公式素材・名称・ゲーム内情報・画像などの利用可否は要確認。
+- 商用利用前に権利・法務確認を行う。
+- Next.js/React/TypeScript/pnpm構成を維持する。
+- SupabaseはAnon Keyのみ公開可能。service role keyは禁止。
+- .env.localをコミットしない。
+- 作業ログをdocs/logsに保存する。
+- AIプロンプトログをdocs/ai-promptsに保存する。
+- 重要判断はdocs/adrに保存する。
+- merge後は不要branch削除を確認する。
+
+完了条件:
+- pnpm lint, pnpm test, pnpm build の確認
+- security/privacy/license/release/support観点の確認
+- Definition of Doneに適合
