@@ -1,5 +1,5 @@
 import { buildLinesFromManualRawText, browserStubOcrAdapter, createBrowserTesseractAdapter } from './adapter';
-import { vi } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 
 vi.mock('tesseract.js', () => ({
   recognize: vi.fn(async () => ({ data: { text: 'atk 10%\ncrit 2.5%' } })),
