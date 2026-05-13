@@ -1,11 +1,12 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-13（Issue #83反映）
+最終更新: 2026-05-13（Issue #85反映）
 
 ## 1. 現在Open Issue
 本ドキュメント作成時点で、詳細なOpen Issue一覧は GitHub 側の最新状態を確認して更新する運用とする。
 
-- #83: `/score` OCR失敗時UX改善と手動補正支援（対応中）
+- #85: `/score` OCR品質評価 初回運用ログ作成（完了）
+- #83: `/score` OCR失敗時UX改善と手動補正支援（完了）
 - #81: `/score` OCR品質評価運用定義（完了）
 - #79: Repository Memory / Context Bootstrap 正本ドキュメント整備（完了）
 - OCR関連継続Issue: 精度・UX・運用改善系（個別番号は都度追記）
@@ -13,14 +14,14 @@
 > 要確認: GitHub上のOpen Issueは変動するため、着手時に必ず最新一覧を同期すること。
 
 ## 2. 次にやるべきIssue候補
-1. OCR失敗時UX改善の残課題整理（文言A/B、離脱率観測）
-2. OCR品質評価運用の週次実測開始
+1. OCR品質評価 第2サイクル実測（前週差分・カテゴリ母数拡張）
+2. OCR品質評価未達KPIの改善Issue起票（低解像度/韓国語/低スペック端末）
 3. `/card` `/compare` OCR展開の要件再評価
 4. 公開マスタ運用の誤投入防止強化（レビュー体制・検証手順）
 
 ## 3. 優先順位（暫定）
-- P1: OCR品質評価運用
-- P1: OCR失敗時UX改善
+- P1: OCR品質評価未達KPI改善
+- P1: OCR品質評価第2サイクル実測
 - P2: 公開マスタ運用強化
 - P3: `/card` `/compare` OCR展開検討
 
