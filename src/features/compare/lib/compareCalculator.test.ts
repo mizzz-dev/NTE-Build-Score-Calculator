@@ -19,7 +19,7 @@ describe('calculateCompareResult', () => {
   it('ScoreConfigを受け取って比較計算できる', () => {
     const result = calculateCompareResult(form, { ...form, mainStatValue: '45' }, sampleScoreConfig);
     expect(result).not.toBeNull();
-    expect(result?.scoreDiff).toBeGreaterThan(0);
+    expect(result?.resultB.buildScoreRaw).toBeGreaterThan(result?.resultA.buildScoreRaw ?? 0);
   });
 
   it('fallback設定でも比較表示用の結果を返す', () => {

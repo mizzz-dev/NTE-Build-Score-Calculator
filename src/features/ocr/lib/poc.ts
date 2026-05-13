@@ -26,6 +26,7 @@ function normalizeText(input: string): string {
     .replace(/[．]/g, '.')
     .replace(/[・·]/g, ' ')
     .replace(/[|｜]/g, 'l')
+    .replace(/夕/g, 'ダ')
     .replace(/[!！]/g, '1')
     .replace(/[。､，,;；:：()\[\]{}「」『』<>＜＞]/g, ' ')
     .replace(/\s+/g, ' ')
