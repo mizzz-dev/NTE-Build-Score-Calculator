@@ -239,7 +239,6 @@ export function ScorePageContainer() {
   useEffect(() => {
     if (ocrStatus !== 'processing') {
       ocrProcessingStartedAtRef.current = null;
-      setOcrProcessingElapsedMs(0);
       return;
     }
     if (ocrProcessingStartedAtRef.current === null) ocrProcessingStartedAtRef.current = Date.now();
