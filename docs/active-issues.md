@@ -1,12 +1,12 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-13（Issue #85反映）
+最終更新: 2026-05-13（Issue #83 追補反映）
 
 ## 1. 現在Open Issue
 本ドキュメント作成時点で、詳細なOpen Issue一覧は GitHub 側の最新状態を確認して更新する運用とする。
 
 - #85: `/score` OCR品質評価 初回運用ログ作成（完了）
-- #83: `/score` OCR失敗時UX改善と手動補正支援（完了）
+- #83: `/score` OCR失敗時UX改善と手動補正支援（完了・追補反映済み）
 - #81: `/score` OCR品質評価運用定義（完了）
 - #79: Repository Memory / Context Bootstrap 正本ドキュメント整備（完了）
 - OCR関連継続Issue: 精度・UX・運用改善系（個別番号は都度追記）

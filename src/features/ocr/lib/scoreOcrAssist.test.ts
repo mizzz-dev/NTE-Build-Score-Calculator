@@ -30,6 +30,19 @@ describe('scoreOcrAssist', () => {
     expect(result.error).toContain('貼り付けテキスト');
   });
 
+  it('OCR成功でも低信頼度候補は手動補正ガイダンスを返す', async () => {
+    const file = new File(['x'], 'a.png', { type: 'image/png' });
+    const result = await runScoreOcrAssist({
+      file,
+      rawText: '',
+      statusCandidates: [createStatus('atk_percent', '攻撃力%')],
+      adapter: { name: 'low-confidence', run: async () => ({ lines: ['???', '???'] }) },
+    });
+    expect(result.status).toBe('needs_review');
+    expect(result.error).toContain('未解決項目');
+    expect(result.error).toContain('手動補正');
+  });
+
   it('未補正項目がある候補は自動反映不可', async () => {
     const file = new File(['x'], 'a.png', { type: 'image/png' });
     const result = await runScoreOcrAssist({
