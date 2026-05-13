@@ -45,3 +45,25 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 - 環境変数が未設定の場合、UI上のログイン機能は「未設定」と表示され、アプリのビルドは継続可能です。
+
+## AI開発プロトコル
+NTE-Build-Score-Calculatorでは、商用運用を見据えたAI開発プロトコルを導入しています。  
+詳細は以下を参照してください。
+- [AI Protocol README](docs/ai-protocol/README.md)
+- [Adoption Guide](docs/ai-protocol/adoption-guide.md)
+- [AI向けPROMPT](docs/ai-protocol/PROMPT.md)
+- [商用運用ポリシー](docs/ai-protocol/nte-commercial-policy.md)
+
+### 運用方針
+- PR本文は日本語
+- Issue本文・コメントは日本語
+- Discussion本文・コメントは日本語
+- commit messageは日本語
+- 作業ログをRepositoryに保存
+- AIプロンプトログをRepositoryに保存
+- 重要判断はADRへ保存
+- 商用利用に関わる変更はsecurity / privacy / license / release観点を確認
+
+### 商用運用上の注意
+本Repositoryは非公式ファンツールです。  
+公式素材・公式名称・ゲーム内情報・画像等の利用可否は、商用利用前に必ず確認してください。
