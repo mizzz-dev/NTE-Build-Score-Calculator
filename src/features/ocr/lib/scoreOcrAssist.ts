@@ -25,7 +25,14 @@ export async function runScoreOcrAssist(input: { file: File; rawText: string; st
   try {
     const result = await adapter.run(input.file);
     const candidate = buildScoreOcrCandidateFromLines(result.lines, input.statusCandidates);
-    return { status: canApplyScoreOcrCandidate(candidate) ? ('success' as const) : ('needs_review' as const), error: null, candidate };
+    if (canApplyScoreOcrCandidate(candidate)) {
+      return { status: 'success' as const, error: null, candidate };
+    }
+    return {
+      status: 'needs_review' as const,
+      error: 'OCR候補に未解決項目があります。低信頼度またはマッピング失敗の可能性があるため、未解決理由を確認して手動補正してください。',
+      candidate,
+    };
   } catch (error) {
     const manualLines = buildLinesFromManualRawText(input.rawText);
     if (manualLines.length === 0) {
