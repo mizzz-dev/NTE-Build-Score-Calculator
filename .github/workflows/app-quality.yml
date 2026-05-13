@@ -14,7 +14,14 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          else
+            echo "pnpm-lock.yaml が無いため --no-frozen-lockfile でインストールします"
+            pnpm install --no-frozen-lockfile
+          fi
       - run: pnpm lint
       - run: pnpm test
       - run: pnpm build
