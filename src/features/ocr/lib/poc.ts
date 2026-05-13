@@ -26,6 +26,7 @@ function normalizeText(input: string): string {
     .replace(/[．]/g, '.')
     .replace(/[・·]/g, ' ')
     .replace(/[|｜]/g, 'l')
+    .replace(/夕/g, 'ダ')
     .replace(/[!！]/g, '1')
     .replace(/[。､，,;；:：()\[\]{}「」『』<>＜＞]/g, ' ')
     .replace(/\s+/g, ' ')
@@ -56,9 +57,11 @@ function similarity(a: string, b: string): number {
 
 function parseStatLine(line: string): OcrDraftStatRow | null {
   const normalizedLine = normalizeText(line);
+  const rawNormalizedLine = line.normalize('NFKC').trim();
   const matched = normalizedLine.match(/^(.+?)\s*([+-]?\d+(?:\.\d+)?%?)$/);
-  if (!matched) return null;
-  const [, statNameRaw, statValueRaw] = matched;
+  const rawMatched = rawNormalizedLine.match(/^(.+?)\s*([+-]?\d+(?:\.\d+)?%?)$/);
+  if (!matched || !rawMatched) return null;
+  const [, statNameRaw, statValueRaw] = rawMatched;
 
   const confidenceBase = /%|\./.test(statValueRaw) ? 0.92 : 0.9;
   return {
@@ -133,7 +136,11 @@ function mapRow(row: OcrDraftStatRow | undefined, statuses: PublicMasterStatus[]
     };
   }
 
-  const unresolvedReason = best.confidence < 0.85 ? '候補の信頼度が低いため手動補正が必要です。' : undefined;
+  const hasOcrSuspicion = /夕メージ/.test(row.statName.value);
+  const isAmbiguous = ranked.length > 1 && (ranked[0].confidence - ranked[1].confidence) < 0.12;
+  const unresolvedReason = (best.confidence < 0.85 || hasOcrSuspicion || isAmbiguous)
+    ? '候補の信頼度または曖昧性により手動補正が必要です。'
+    : undefined;
   return {
     ...row,
     matchedStatus: best.status,
