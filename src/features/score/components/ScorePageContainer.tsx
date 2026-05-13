@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { NeonPanel } from '@/components/ui/NeonPanel';
 import { SectionHeader } from '@/components/ui/SectionHeader';
@@ -70,6 +70,8 @@ export function ScorePageContainer() {
   const [ocrRawText, setOcrRawText] = useState<string>('');
   const [ocrDraft, setOcrDraft] = useState<ScoreOcrCandidate | null>(null);
   const [ocrProgressStatus, setOcrProgressStatus] = useState<'idle' | OcrProgressStatus>('idle');
+  const [ocrProcessingElapsedMs, setOcrProcessingElapsedMs] = useState<number>(0);
+  const ocrProcessingStartedAtRef = useRef<number | null>(null);
   const auth = useAuthState();
   const cloudEnabled = canUseCloudStorage(auth.user);
   const hasGuestHistoryForMigration = listMigrationGuestHistory().length > 0;
@@ -234,10 +236,26 @@ export function ScorePageContainer() {
   const statKeyOptions = selectableStatKeys.length > 0 ? selectableStatKeys : STAT_KEYS;
 
 
+  useEffect(() => {
+    if (ocrStatus !== 'processing') {
+      ocrProcessingStartedAtRef.current = null;
+      return;
+    }
+    if (ocrProcessingStartedAtRef.current === null) ocrProcessingStartedAtRef.current = Date.now();
+    const timer = window.setInterval(() => {
+      const started = ocrProcessingStartedAtRef.current;
+      if (!started) return;
+      setOcrProcessingElapsedMs(Date.now() - started);
+    }, 250);
+    return () => window.clearInterval(timer);
+  }, [ocrStatus]);
+
   const handleSelectOcrImage = useCallback(async (file: File | null) => {
     if (!file) return;
     setOcrStatus('processing');
     setOcrProgressStatus('loading_engine');
+    ocrProcessingStartedAtRef.current = Date.now();
+    setOcrProcessingElapsedMs(0);
     setOcrError(null);
     const adapter = createBrowserTesseractAdapter((status) => setOcrProgressStatus(status));
     const result = await runScoreOcrAssist({ file, rawText: ocrRawText, statusCandidates, adapter });
@@ -303,6 +321,7 @@ export function ScorePageContainer() {
           <ScoreOcrAssistPanel
             status={ocrStatus}
             progressStatus={ocrProgressStatus}
+            processingElapsedMs={ocrProcessingElapsedMs}
             error={ocrError}
             rawText={ocrRawText}
             candidate={ocrDraft}
