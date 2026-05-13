@@ -29,10 +29,10 @@ export async function runScoreOcrAssist(input: { file: File; rawText: string; st
   } catch (error) {
     const manualLines = buildLinesFromManualRawText(input.rawText);
     if (manualLines.length === 0) {
-      return { status: 'error' as const, error: error instanceof Error ? error.message : 'OCR処理に失敗しました。', candidate: null };
+      return { status: 'error' as const, error: `OCR読み取りに失敗しました。${error instanceof Error ? `（${error.message}）` : ''} 画像を変えて再試行するか、OCR生テキスト貼り付け・手動入力へ切り替えてください。`, candidate: null };
     }
     const candidate = buildScoreOcrCandidateFromLines(manualLines, input.statusCandidates);
-    return { status: 'needs_review' as const, error: '画像OCRは未導入のため、貼り付けテキストからドラフトを生成しました。', candidate };
+    return { status: 'needs_review' as const, error: '画像OCRは失敗したため、貼り付けテキストからドラフトを生成しました。未解決項目を補正してからフォームへ反映してください。', candidate };
   }
 }
 

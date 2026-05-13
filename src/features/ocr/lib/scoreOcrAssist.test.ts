@@ -41,6 +41,19 @@ describe('scoreOcrAssist', () => {
     expect(canApplyScoreOcrCandidate(result.candidate)).toBe(false);
   });
 
+
+  it('OCR失敗かつfallback不可時は次アクション付きエラーを返す', async () => {
+    const file = new File(['x'], 'a.png', { type: 'image/png' });
+    const result = await runScoreOcrAssist({
+      file,
+      rawText: '',
+      statusCandidates: [createStatus('atk_percent', '攻撃力%')],
+      adapter: { name: 'failing', run: async () => { throw new Error('timeout'); } },
+    });
+    expect(result.status).toBe('error');
+    expect(result.error).toContain('画像を変えて再試行');
+    expect(result.error).toContain('手動入力');
+  });
   it('補正済み候補はフォームへ反映できる', () => {
     const next = applyScoreOcrCandidateToForm({
       slot: 'gear',
