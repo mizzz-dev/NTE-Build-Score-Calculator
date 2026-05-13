@@ -17,7 +17,7 @@ const form = {
 
 describe('calculateCompareResult', () => {
   it('ScoreConfigを受け取って比較計算できる', () => {
-    const result = calculateCompareResult(form, { ...form, mainStatValue: '45' }, sampleScoreConfig);
+    const result = calculateCompareResult(form, { ...form, subStats: [{ key: 'crit_rate' as const, value: '11' }, ...form.subStats.slice(1)] }, sampleScoreConfig);
     expect(result).not.toBeNull();
     expect(result?.scoreDiff).toBeGreaterThan(0);
   });
