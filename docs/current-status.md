@@ -1,11 +1,11 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-12
+最終更新: 2026-05-13
 
 ## 1. 現在の実装状態
 OCR MVP は、`/score` 画面における入力補助として段階的に導入済みです。保存・共有・ランキングのpayload互換は維持されています。
 
-## 2. 完了済みフェーズ（PR #78 まで）
+## 2. 完了済みフェーズ（PR #80 まで）
 - OCR要件定義
 - ブラウザ内OCR PoC
 - `/score` OCR入力補助UI
@@ -13,6 +13,7 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - OCR UI責務分離（Container/Panel分割）
 - Tesseract.js 遅延読み込み接続
 - OCRステータスマッピング精度改善
+- Repository Memory / Context Bootstrap 正本ドキュメント整備
 
 ## 3. 進行中 / 次フェーズ
 - 進行中: OCR MVPの品質安定化（精度・性能・UXの継続検証）

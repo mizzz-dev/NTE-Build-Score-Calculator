@@ -1,11 +1,12 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-12
+最終更新: 2026-05-13
 
 ## 1. 現在Open Issue
 本ドキュメント作成時点で、詳細なOpen Issue一覧は GitHub 側の最新状態を確認して更新する運用とする。
 
-- #79: Repository Memory / Context Bootstrap 正本ドキュメント整備（本Issue）
+- #81: `/score` OCR品質評価運用定義（本Issue）
+- #79: Repository Memory / Context Bootstrap 正本ドキュメント整備（完了）
 - OCR関連継続Issue: 精度・UX・運用改善系（個別番号は都度追記）
 
 > 要確認: GitHub上のOpen Issueは変動するため、着手時に必ず最新一覧を同期すること。
