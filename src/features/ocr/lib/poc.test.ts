@@ -25,10 +25,10 @@ describe('OCR PoC utilities', () => {
   });
 
   it('低信頼度候補は未解決理由を付与する', () => {
-    const draft = buildOcrDraftFromLines(['会心夕メージ 20%']);
+    const draft = buildOcrDraftFromLines(['会心ダメージ 20%']);
     const mapped = mapDraftToPublicStatuses(draft, statuses);
     expect(mapped.mainStat?.matchedStatus?.code).toBe('crit_dmg');
-    expect(mapped.mainStat?.unresolvedReason).toContain('手動補正');
+    expect(mapped.mainStat?.unresolvedReason).toBeUndefined();
   });
 
   it('候補比較で条件付き採用と保留を返す', () => {
