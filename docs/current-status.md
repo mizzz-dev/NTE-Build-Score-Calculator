@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-14（Issue #121 UX/観測性最小改善 反映）
+最終更新: 2026-05-15（PR #122 merge後処理 / Issue #123 作成反映）
 
 ## 1. 現在の実装状態
 OCR MVP は、`/score` 画面における入力補助として段階的に導入済みです。保存・共有・ランキングのpayload互換は維持されています。
@@ -80,15 +80,17 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - `/compare` OCR限定導入は2サイクル連続で継続条件を達成。
 - 正式展開前は改善Issue先行（低性能端末p95短縮・fallback/離脱要因分解）を推奨。
 
-## 1.11 現在の次作業（Issue #121）
-- Issue #121 で `/compare` OCR正式展開前の低性能端末p95短縮とfallback・離脱要因分解を実施する。
-- OCRアルゴリズム、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は変更しない。
-- 低性能端末向けの待機/案内導線、fallback要因分類、比較前確認離脱要因分類を整理する。
-- 改善後に第3サイクルKPI計測へ進むか、正式展開可否判定へ進むかを判断する。
-- 低性能端末向け待機案内を最小文言調整（待機継続/再試行/手動fallback判断を明示）。
-- fallback要因分類と比較前確認離脱要因分類の記録方針を追加（匿名・集計値前提）。
-- OCRアルゴリズム/DB/auth/infra/deployment/保存payload/ランキング仕様は未変更。
-- 改善後は第3サイクルKPI計測へ進み、要因別比率と低性能端末p95の改善確認後に正式展開判定へ進む。
+## 1.11 Issue #121 完了結果（正式展開前UX/観測性改善）
+- 低性能端末向け待機案内を最小文言調整し、待機継続・再試行・手動fallback判断とA/B入力値保持を明示。
+- fallback要因分類と比較前確認離脱要因分類の純関数を `src/features/compare/lib/compareOcrObservability.ts` に追加。
+- 優先順位固定の単体テストを `src/features/compare/lib/compareOcrObservability.test.ts` に追加。
+- `docs/logs/issue-121-compare-ocr-pre-release-ux-and-observability.md` と `docs/ai-prompts/2026-05-14-issue-121-compare-ocr-pre-release-risk-reduction.md` を保存済み。
+- OCRアルゴリズム、DB、auth、infra、deployment、保存payload仕様、ランキング仕様、画像保存方式は未変更。
+
+## 1.12 現在の次作業（Issue #123）
+- Issue #123 で `/compare` OCR正式展開前改善後の第3サイクルKPI計測を実施する。
+- 第3サイクルでは、低性能端末p95、fallback率、比較前確認離脱率、要因別比率、A/B取り違え誤反映率、payload互換を匿名・集計値で確認する。
+- 第1・第2サイクルとの差分を整理し、正式展開可否判定へ進めるか、追加改善Issueが必要かを判断する。
 
 ## 2. 完了済みフェーズ（PR #80 まで）
 - OCR要件定義
@@ -101,13 +103,13 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - Repository Memory / Context Bootstrap 正本ドキュメント整備
 
 ## 3. 進行中 / 次フェーズ
-- 進行中: 正式展開前の改善Issue対応フェーズ（Issue #121）
-- 反映済み: Issue #119 で `/compare` OCR限定導入 第2サイクルKPI計測と2サイクル連続達成判定を完了
+- 進行中: 正式展開前改善後の第3サイクルKPI計測フェーズ（Issue #123）
+- 反映済み: Issue #121 で `/compare` OCR正式展開前のUX/観測性最小改善を完了
 - 次フェーズ候補:
-  1. Issue #121: 低スペック端末カテゴリp95短縮とfallback・離脱要因分解
-  2. 改善後の第3サイクルKPI計測
+  1. Issue #123: 改善後の第3サイクルKPI計測
+  2. 正式展開可否の最終判定
   3. 条件付き継続の監視条件運用Runbook整備
-  4. 正式展開可否の最終判定
+  4. 正式リリース前の品質・SEO・規約整備
 
 ## 4. 既知の制約
 - OCRは入力補助であり、最終確定はユーザー手動確認が必須。
@@ -136,4 +138,5 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - `docs/logs/issue-115-compare-ocr-minimum-implementation.md`
 - `docs/logs/compare-ocr-limited-release-kpi.md`
 - `docs/logs/compare-ocr-limited-release-kpi-cycle-2.md`
+- `docs/logs/issue-121-compare-ocr-pre-release-ux-and-observability.md`
 - `docs/active-issues.md`
