@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-14（Issue #113 `/compare` OCR要件詳細化反映）
+最終更新: 2026-05-14（PR #116 merge後処理 / Issue #117 作成反映）
 
 ## 1. 現在の実装状態
 OCR MVP は、`/score` 画面における入力補助として段階的に導入済みです。保存・共有・ランキングのpayload互換は維持されています。
@@ -15,13 +15,11 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - `/card`・`/compare` へのOCR入力補助展開可否を要件・影響・リスク・運用条件で再評価。
 - 判定は「条件付き可」。
 - 条件: payload非混入維持、ランキング/共有URL互換維持、低スペック端末監視強化、段階展開・ロールバック条件明文化。
-- 本Issueでは実装は行わず、次Issue候補（`/card` 要件詳細化→限定導入→`/compare` 要件化）を整理。
 
 ## 1.3 Issue #105 要件詳細化結果
 - Issue #105 で `/card` OCR入力補助の要件詳細化・監視設計ドキュメントを作成済み。
 - 成果物: `docs/reviews/issue-105-card-ocr-requirements-and-observability.md`
 - `/card` の責務整理、`/score` からの流用/分離責務、項目別反映ルール、payload非混入方針、監視KPI、ロールバック条件、次実装Issue最小スコープを定義済み。
-- 本Issueは要件定義フェーズのため、実装は未着手。
 
 ## 1.4 Issue #107 実装反映状況
 - `/card` にOCR入力補助UI導線を最小構成で追加済み（限定公開前提）。
@@ -38,8 +36,6 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - 保存payload・共有URL・ランキングpayload互換は維持（OCRメタ混入なし）。
 - `/compare` 副作用なし、低信頼度候補の自動確定なし、OCR失敗時の手動fallback成立を確認。
 - 限定導入判定は「条件付き継続」（低性能端末p95が閾値近傍のため監視継続）。
-- `/compare` OCR要件詳細化は、`/card`で2サイクル連続達成後に進行判断とする。
-
 
 ## 1.6 Issue #111 完了結果（/card OCR限定導入 第2サイクル）
 - KPI計測ログを `docs/logs/card-ocr-limited-release-kpi-cycle-2.md` として作成し、匿名・集計値で記録済み。
@@ -49,8 +45,6 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - 保存payload・共有URL・ランキングpayload互換は維持（OCRメタ混入なし）。
 - `/compare` 副作用なし、低信頼度候補の自動確定なし、OCR失敗時の手動fallback成立を確認。
 - `/card` OCR限定導入は2サイクル連続で継続条件を達成。
-- `/compare` OCR要件詳細化は進行可（実装着手は次Issueで判断）。
-
 
 ## 1.7 Issue #113 完了結果（`/compare` OCR要件詳細化）
 - Issue #113 で `/compare` OCR入力補助の要件詳細化・監視設計ドキュメントを作成済み。
@@ -59,14 +53,20 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - A/B 2系統入力のOCR反映ルール、下書き扱い、比較前手動確認必須、低信頼度未確定維持を明記。
 - OCRメタの保存payload・共有URL・ランキングpayload非混入方針、比較結果への未確認値混入防止条件を明文化。
 - 監視KPI（誤反映率/未確定残存率/比較前確認離脱率/fallback率/端末別p95）と限定公開ロールバック条件を定義。
-- 本Issueは要件定義フェーズのため、`/compare` 実装は未着手。
-
 
 ## 1.8 Issue #115 実装反映状況（`/compare` OCR最小導入）
-- `/compare` にA/B別OCR入力補助導線を最小構成で追加。
-- A/B別OCR下書き状態を分離し、比較前確認ガード（A/B確認済み + 未確定0件）を導入。
+- `/compare` にA/B別OCR入力補助導線を最小構成で追加済み。
+- A/B別OCR下書き状態を分離し、比較前確認ガード（A/B確認済み + 未確定0件）を導入済み。
+- 未確認/未確定項目がある場合は比較結果を算出しないガードを導入済み。
 - OCR失敗時は対象系統のみ失敗表示し、手動入力fallbackを維持。
 - 保存payload・共有URL・ランキングpayload仕様は変更なし（OCRメタ非混入維持）。
+- `src/features/compare/lib/compareOcr.test.ts` に、未確認/未確定時の比較ブロックと片側反映確認テストを追加済み。
+
+## 1.9 現在の次作業（Issue #117）
+- Issue #117 で `/compare` OCR限定導入後のKPI計測と互換性確認を実施する。
+- KPIはOCR処理時間p95、端末性能別p95、A/B取り違え誤反映率、未確定項目残存率、比較前確認離脱率、fallback率、手動補正率を匿名・集計値で記録する。
+- 保存payload・共有URL・ランキングpayload互換、未確認OCR値の比較計算混入なし、A/B取り違え誤反映なし、低信頼度候補の自動確定禁止、対象系統のみの手動fallback動作を確認する。
+- `/compare` OCR限定導入を「継続可 / 条件付き継続 / rollback候補」で判定する。
 
 ## 2. 完了済みフェーズ（PR #80 まで）
 - OCR要件定義
@@ -79,20 +79,21 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - Repository Memory / Context Bootstrap 正本ドキュメント整備
 
 ## 3. 進行中 / 次フェーズ
-- 完了: Issue #111 で `/card` OCR限定導入 第2サイクルKPI計測と互換性確認を記録
-- 判定更新: `/card` OCR限定導入は2サイクル連続で継続条件を達成
+- 進行中: `/compare` OCR限定導入後のKPI計測・互換性確認フェーズ（Issue #117）
+- 反映済み: Issue #115 で `/compare` OCR入力補助の最小実装を完了
 - 次フェーズ候補:
-  1. 低スペック端末カテゴリp95短縮の継続
-  2. `/compare` OCR入力補助の要件詳細化（実装前レビュー）
-  3. 展開時の監視条件・ロールバック条件Runbook整備
-  4. fallback率・離脱率の要因分解ログ改善
+  1. Issue #117: `/compare` OCR限定導入後のKPI計測と互換性確認
+  2. `/compare` OCR限定導入の継続可否判定
+  3. `/compare` OCR第2サイクルKPI計測
+  4. 低スペック端末カテゴリp95短縮の継続
+  5. fallback率・離脱率の要因分解ログ改善
 
 ## 4. 既知の制約
 - OCRは入力補助であり、最終確定はユーザー手動確認が必須。
 - 画像はサーバー保存しない（メモリ上の一時処理）。
 - OCR由来メタ情報（confidence等）は保存payloadへ混入させない。
 - 端末性能・ブラウザ性能によりOCR処理時間が変動する。
-- `/card` 限定導入後は、保存payload・共有URL・ランキング互換を継続確認する。
+- `/compare` 限定導入後は、A/B取り違え誤反映と未確認OCR値の比較結果混入を重点監視する。
 
 ## 5. 注意すべき変更禁止領域
 本フェーズでは以下を変更しない。
@@ -102,7 +103,6 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - 保存payload仕様
 - ランキング仕様
 - 管理画面CRUD
-- `/compare` へのOCR適用実装
 
 ## 6. 参照ドキュメント
 - `docs/ocr-requirements.md`
@@ -111,5 +111,6 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - `docs/component-design.md`
 - `docs/reviews/ocr-expansion-feasibility-card-compare-issue-103.md`
 - `docs/reviews/issue-105-card-ocr-requirements-and-observability.md`
-- `docs/logs/issue-107-card-ocr-minimum-implementation.md`
+- `docs/reviews/issue-113-compare-ocr-requirements-and-observability.md`
+- `docs/logs/issue-115-compare-ocr-minimum-implementation.md`
 - `docs/active-issues.md`
