@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-14（Issue #111 第2サイクルKPI計測反映）
+最終更新: 2026-05-14（Issue #113 `/compare` OCR要件詳細化反映）
 
 ## 1. 現在の実装状態
 OCR MVP は、`/score` 画面における入力補助として段階的に導入済みです。保存・共有・ランキングのpayload互換は維持されています。
@@ -50,6 +50,16 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - `/compare` 副作用なし、低信頼度候補の自動確定なし、OCR失敗時の手動fallback成立を確認。
 - `/card` OCR限定導入は2サイクル連続で継続条件を達成。
 - `/compare` OCR要件詳細化は進行可（実装着手は次Issueで判断）。
+
+
+## 1.7 Issue #113 完了結果（`/compare` OCR要件詳細化）
+- Issue #113 で `/compare` OCR入力補助の要件詳細化・監視設計ドキュメントを作成済み。
+- 成果物: `docs/reviews/issue-113-compare-ocr-requirements-and-observability.md`
+- `/compare` の責務境界（入力/表示/比較計算/共有URL/保存・ランキング）を固定し、`/score`・`/card` からの流用責務と分離責務を整理。
+- A/B 2系統入力のOCR反映ルール、下書き扱い、比較前手動確認必須、低信頼度未確定維持を明記。
+- OCRメタの保存payload・共有URL・ランキングpayload非混入方針、比較結果への未確認値混入防止条件を明文化。
+- 監視KPI（誤反映率/未確定残存率/比較前確認離脱率/fallback率/端末別p95）と限定公開ロールバック条件を定義。
+- 本Issueは要件定義フェーズのため、`/compare` 実装は未着手。
 
 ## 2. 完了済みフェーズ（PR #80 まで）
 - OCR要件定義
