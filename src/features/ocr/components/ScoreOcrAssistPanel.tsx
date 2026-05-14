@@ -47,9 +47,9 @@ export function buildProcessingGuidance(status: ScoreOcrStatus, progressStatus: 
     return 'OCR処理中...（6秒以上経過）このまま待つか、手動テキストfallback・手動入力へ切り替えてください。';
   }
   if (processingElapsedMs >= SLOW_PROCESSING_THRESHOLD_MS) {
-    return 'OCR処理中...（4秒以上経過）低スペック端末では時間がかかるため、必要に応じて別画像で再試行してください。';
+    return 'OCR処理中...（4秒以上経過）低スペック端末では時間がかかります。画面を閉じずに待つか、別画像で再試行してください。';
   }
-  return 'OCR処理中...（長い場合は別画像での再試行や手動テキストfallbackを検討してください）';
+  return 'OCR処理中...（A/Bの入力値は保持されています。長い場合は別画像での再試行や手動テキストfallbackを検討してください）';
 }
 
 export function ScoreOcrAssistPanel({ status, progressStatus = 'idle', processingElapsedMs = 0, error, rawText, candidate, statKeyOptions, panelTitle = 'OCR入力補助', onRawTextChange, onSelectImage, onUpdateCandidate, onApplyCandidate }: PropsWithProgress) {
