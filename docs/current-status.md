@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-14（PR #104 merge後処理 / Issue #105 作成反映）
+最終更新: 2026-05-13（Issue #105 要件詳細化ドキュメント作成）
 
 ## 1. 現在の実装状態
 OCR MVP は、`/score` 画面における入力補助として段階的に導入済みです。保存・共有・ランキングのpayload互換は維持されています。
@@ -18,9 +18,10 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - 本Issueでは実装は行わず、次Issue候補（`/card` 要件詳細化→限定導入→`/compare` 要件化）を整理。
 
 ## 1.3 現在の次作業（Issue #105）
-- Issue #105 で `/card` OCR入力補助の要件詳細化・監視設計を行う。
-- 本Issueでは実装せず、`/card` への限定導入前に責務境界、監視KPI、ロールバック条件、payload非混入回帰観点を整理する。
-- `/compare` は `/card` の要件詳細化と安定確認後に扱う。
+- Issue #105 で `/card` OCR入力補助の要件詳細化・監視設計ドキュメントを作成済み。
+- 成果物: `docs/reviews/issue-105-card-ocr-requirements-and-observability.md`
+- 本Issueは要件定義フェーズのため、実装は未着手（次Issueで限定導入を扱う）。
+- `/compare` は `/card` の限定導入後の安定確認を前提に扱う。
 
 ## 2. 完了済みフェーズ（PR #80 まで）
 - OCR要件定義
@@ -33,7 +34,7 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - Repository Memory / Context Bootstrap 正本ドキュメント整備
 
 ## 3. 進行中 / 次フェーズ
-- 進行中: OCR MVPの展開判定フェーズ（Issue #105: `/card` OCR入力補助の要件詳細化・監視設計）
+- 進行中: `/card` OCR入力補助の限定導入準備フェーズ（Issue #105の要件詳細化成果物を基準に次実装Issueを起票）
 - 反映済み: Issue #103 で `/card`・`/compare` OCR展開可否を「条件付き可」と判定
 - 次フェーズ候補:
   1. Issue #105: `/card` OCR入力補助の要件詳細化・監視設計
