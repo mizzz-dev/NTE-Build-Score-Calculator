@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-14（Issue #119 第2サイクルKPI計測完了反映）
+最終更新: 2026-05-14（PR #120 merge後処理 / Issue #121 作成反映）
 
 ## 1. 現在の実装状態
 OCR MVP は、`/score` 画面における入力補助として段階的に導入済みです。保存・共有・ランキングのpayload互換は維持されています。
@@ -70,8 +70,7 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - 未確認OCR値の比較計算混入なし、A/B取り違え誤反映なし、低信頼度候補の自動確定0件、OCR失敗時の対象系統のみfallback成立を確認。
 - 判定は「条件付き継続」。第2サイクル計測へ進行可（低性能端末p95監視継続）。
 
-
-## 1.11 Issue #119 完了結果（`/compare` OCR限定導入 第2サイクル）
+## 1.10 Issue #119 完了結果（`/compare` OCR限定導入 第2サイクル）
 - KPI計測ログを `docs/logs/compare-ocr-limited-release-kpi-cycle-2.md` として作成し、匿名・集計値で記録済み。
 - OCR処理時間p95（全体3.7秒、低4.0秒/中3.5秒/高3.0秒）を確認。
 - A/B取り違え誤反映率0.0%、未確定項目残存率12.6%、比較前確認離脱率4.1%、fallback率8.6%、手動補正率17.8%を記録。
@@ -81,9 +80,11 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - `/compare` OCR限定導入は2サイクル連続で継続条件を達成。
 - 正式展開前は改善Issue先行（低性能端末p95短縮・fallback/離脱要因分解）を推奨。
 
-## 1.10 現在の次作業（Issue #119）
-- Issue #119 は完了（`/compare` OCR限定導入の第2サイクルKPI計測・判定完了）。
-- 次は正式展開前の改善Issue（低性能端末p95短縮、fallback/離脱要因分解）を先行し、監視条件を維持したまま限定導入を継続する。
+## 1.11 現在の次作業（Issue #121）
+- Issue #121 で `/compare` OCR正式展開前の低性能端末p95短縮とfallback・離脱要因分解を実施する。
+- OCRアルゴリズム、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は変更しない。
+- 低性能端末向けの待機/案内導線、fallback要因分類、比較前確認離脱要因分類を整理する。
+- 改善後に第3サイクルKPI計測へ進むか、正式展開可否判定へ進むかを判断する。
 
 ## 2. 完了済みフェーズ（PR #80 まで）
 - OCR要件定義
@@ -96,14 +97,13 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - Repository Memory / Context Bootstrap 正本ドキュメント整備
 
 ## 3. 進行中 / 次フェーズ
-- 進行中: 正式展開前の改善Issue整理フェーズ（Issue #119 判定結果反映後）
-- 反映済み: Issue #117 で `/compare` OCR限定導入後の初回KPI計測と互換性確認を完了
+- 進行中: 正式展開前の改善Issue対応フェーズ（Issue #121）
+- 反映済み: Issue #119 で `/compare` OCR限定導入 第2サイクルKPI計測と2サイクル連続達成判定を完了
 - 次フェーズ候補:
-  1. 低スペック端末カテゴリp95短縮の継続
-  2. fallback率・離脱率の要因分解ログ改善
+  1. Issue #121: 低スペック端末カテゴリp95短縮とfallback・離脱要因分解
+  2. 改善後の第3サイクルKPI計測
   3. 条件付き継続の監視条件運用Runbook整備
-  4. 正式展開前改善Issueの起票・実施
-  5. 正式展開可否の最終判定
+  4. 正式展開可否の最終判定
 
 ## 4. 既知の制約
 - OCRは入力補助であり、最終確定はユーザー手動確認が必須。
@@ -131,4 +131,5 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - `docs/reviews/issue-113-compare-ocr-requirements-and-observability.md`
 - `docs/logs/issue-115-compare-ocr-minimum-implementation.md`
 - `docs/logs/compare-ocr-limited-release-kpi.md`
+- `docs/logs/compare-ocr-limited-release-kpi-cycle-2.md`
 - `docs/active-issues.md`
