@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-13（Issue #105 要件詳細化ドキュメント作成）
+最終更新: 2026-05-14（PR #106 merge後処理 / Issue #107 作成反映）
 
 ## 1. 現在の実装状態
 OCR MVP は、`/score` 画面における入力補助として段階的に導入済みです。保存・共有・ランキングのpayload互換は維持されています。
@@ -17,10 +17,16 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - 条件: payload非混入維持、ランキング/共有URL互換維持、低スペック端末監視強化、段階展開・ロールバック条件明文化。
 - 本Issueでは実装は行わず、次Issue候補（`/card` 要件詳細化→限定導入→`/compare` 要件化）を整理。
 
-## 1.3 現在の次作業（Issue #105）
+## 1.3 Issue #105 要件詳細化結果
 - Issue #105 で `/card` OCR入力補助の要件詳細化・監視設計ドキュメントを作成済み。
 - 成果物: `docs/reviews/issue-105-card-ocr-requirements-and-observability.md`
-- 本Issueは要件定義フェーズのため、実装は未着手（次Issueで限定導入を扱う）。
+- `/card` の責務整理、`/score` からの流用/分離責務、項目別反映ルール、payload非混入方針、監視KPI、ロールバック条件、次実装Issue最小スコープを定義済み。
+- 本Issueは要件定義フェーズのため、実装は未着手。
+
+## 1.4 現在の次作業（Issue #107）
+- Issue #107 で `/card` OCR入力補助の最小実装を限定公開前提で行う。
+- OCR結果は下書きとして扱い、カード生成前にユーザー手動確認を必須にする。
+- OCR由来メタ情報を保存payload・共有URL・ランキングpayloadへ混入させない。
 - `/compare` は `/card` の限定導入後の安定確認を前提に扱う。
 
 ## 2. 完了済みフェーズ（PR #80 まで）
@@ -34,18 +40,17 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - Repository Memory / Context Bootstrap 正本ドキュメント整備
 
 ## 3. 進行中 / 次フェーズ
-- 進行中: `/card` OCR入力補助の限定導入準備フェーズ（Issue #105の要件詳細化成果物を基準に次実装Issueを起票）
-- 反映済み: Issue #103 で `/card`・`/compare` OCR展開可否を「条件付き可」と判定
+- 進行中: `/card` OCR入力補助の限定導入実装フェーズ（Issue #107）
+- 反映済み: Issue #105 で `/card` OCR入力補助の要件詳細化・監視設計を完了
 - 次フェーズ候補:
-  1. Issue #105: `/card` OCR入力補助の要件詳細化・監視設計
-  2. `/card` OCR入力補助の最小実装（限定公開）
+  1. Issue #107: `/card` OCR入力補助の最小実装（限定公開）
+  2. `/card` OCR入力補助の限定導入KPI計測
   3. `/card` 安定確認後の `/compare` 要件詳細化
   4. 低スペック端末カテゴリp95（4.1秒）短縮の継続
   5. 展開時の監視条件・ロールバック条件Runbook整備
 
 ## 4. 既知の制約
 - OCRは入力補助であり、最終確定はユーザー手動確認が必須。
-- 初期適用範囲は `/score` のみ（`/card` `/compare` は未適用）。
 - 画像はサーバー保存しない（メモリ上の一時処理）。
 - OCR由来メタ情報（confidence等）は保存payloadへ混入させない。
 - 端末性能・ブラウザ性能によりOCR処理時間が変動する。
@@ -59,7 +64,7 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - 保存payload仕様
 - ランキング仕様
 - 管理画面CRUD
-- `/card` `/compare` へのOCR適用実装
+- `/compare` へのOCR適用実装
 
 ## 6. 参照ドキュメント
 - `docs/ocr-requirements.md`
@@ -67,4 +72,5 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - `docs/data-design.md`
 - `docs/component-design.md`
 - `docs/reviews/ocr-expansion-feasibility-card-compare-issue-103.md`
+- `docs/reviews/issue-105-card-ocr-requirements-and-observability.md`
 - `docs/active-issues.md`
