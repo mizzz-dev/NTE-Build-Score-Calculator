@@ -42,5 +42,6 @@ export function canRunCompareWithOcrGuard(params: { formAErrors: string[]; formB
 
 export function applyCompareOcrDraftToForm(candidate: ScoreOcrCandidate | null, current: CompareBuildForm): CompareBuildForm {
   if (!candidate || !canApplyScoreOcrCandidate(candidate)) return current;
-  return applyScoreOcrCandidateToForm(candidate, current);
+  const applied = applyScoreOcrCandidateToForm(candidate, current);
+  return { ...current, ...applied };
 }
