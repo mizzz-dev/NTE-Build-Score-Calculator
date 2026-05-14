@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-14（Issue #117 KPI計測・互換性確認 反映）
+最終更新: 2026-05-14（PR #118 merge後処理 / Issue #119 作成反映）
 
 ## 1. 現在の実装状態
 OCR MVP は、`/score` 画面における入力補助として段階的に導入済みです。保存・共有・ランキングのpayload互換は維持されています。
@@ -70,6 +70,11 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - 未確認OCR値の比較計算混入なし、A/B取り違え誤反映なし、低信頼度候補の自動確定0件、OCR失敗時の対象系統のみfallback成立を確認。
 - 判定は「条件付き継続」。第2サイクル計測へ進行可（低性能端末p95監視継続）。
 
+## 1.10 現在の次作業（Issue #119）
+- Issue #119 で `/compare` OCR限定導入の第2サイクルKPI計測を実施する。
+- 第1サイクルとの差分、低性能端末p95、fallback率、比較前確認離脱率、手動補正率、A/B取り違え誤反映率を確認する。
+- 2サイクル連続で継続条件を満たした場合、正式展開前の改善Issue要否と次フェーズを判断する。
+
 ## 2. 完了済みフェーズ（PR #80 まで）
 - OCR要件定義
 - ブラウザ内OCR PoC
@@ -81,13 +86,14 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - Repository Memory / Context Bootstrap 正本ドキュメント整備
 
 ## 3. 進行中 / 次フェーズ
-- 完了: Issue #117 で`/compare` OCR限定導入後のKPI計測・互換性確認を実施（判定: 条件付き継続）
-- 反映済み: Issue #115 で `/compare` OCR入力補助の最小実装を完了
+- 進行中: `/compare` OCR限定導入の第2サイクル検証フェーズ（Issue #119）
+- 反映済み: Issue #117 で `/compare` OCR限定導入後の初回KPI計測と互換性確認を完了
 - 次フェーズ候補:
-  1. `/compare` OCR限定導入 第2サイクルKPI計測
+  1. Issue #119: `/compare` OCR限定導入 第2サイクルKPI計測
   2. 低スペック端末カテゴリp95短縮の継続
   3. fallback率・離脱率の要因分解ログ改善
   4. 条件付き継続の監視条件運用Runbook整備
+  5. 正式展開前の改善Issue要否判断
 
 ## 4. 既知の制約
 - OCRは入力補助であり、最終確定はユーザー手動確認が必須。
@@ -114,4 +120,5 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - `docs/reviews/issue-105-card-ocr-requirements-and-observability.md`
 - `docs/reviews/issue-113-compare-ocr-requirements-and-observability.md`
 - `docs/logs/issue-115-compare-ocr-minimum-implementation.md`
+- `docs/logs/compare-ocr-limited-release-kpi.md`
 - `docs/active-issues.md`
