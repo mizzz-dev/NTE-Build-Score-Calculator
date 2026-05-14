@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-14（Issue #107 /card OCR最小実装反映）
+最終更新: 2026-05-14（PR #108 merge後処理 / Issue #109 作成反映）
 
 ## 1. 現在の実装状態
 OCR MVP は、`/score` 画面における入力補助として段階的に導入済みです。保存・共有・ランキングのpayload互換は維持されています。
@@ -31,6 +31,12 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - 保存payload・共有URL・ランキングpayload仕様は変更なし（非混入方針維持）。
 - `/compare` への影響はなし。
 
+## 1.5 現在の次作業（Issue #109）
+- Issue #109 で `/card` OCR限定導入後のKPI計測と互換性確認を実施する。
+- KPIはOCR処理時間p95、端末性能別p95、補正率、未確定項目残存率、反映前確認離脱率、fallback率を匿名・集計値で記録する。
+- 保存payload・共有URL・ランキングpayload互換、`/compare` 副作用なし、低信頼度候補の自動確定禁止、手動fallback動作を確認する。
+- `/compare` OCR要件詳細化へ進めるかは、Issue #109の結果をもとに判断する。
+
 ## 2. 完了済みフェーズ（PR #80 まで）
 - OCR要件定義
 - ブラウザ内OCR PoC
@@ -42,13 +48,13 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - Repository Memory / Context Bootstrap 正本ドキュメント整備
 
 ## 3. 進行中 / 次フェーズ
-- 進行中: `/card` OCR入力補助の限定導入実装フェーズ（Issue #107）
-- 反映済み: Issue #105 で `/card` OCR入力補助の要件詳細化・監視設計を完了
+- 進行中: `/card` OCR入力補助の限定導入後検証フェーズ（Issue #109）
+- 反映済み: Issue #107 で `/card` OCR入力補助の最小実装を完了
 - 次フェーズ候補:
-  1. Issue #107: `/card` OCR入力補助の最小実装（限定公開）
-  2. `/card` OCR入力補助の限定導入KPI計測
+  1. Issue #109: `/card` OCR限定導入後のKPI計測と互換性確認
+  2. `/card` OCR限定導入の継続可否判定
   3. `/card` 安定確認後の `/compare` 要件詳細化
-  4. 低スペック端末カテゴリp95（4.1秒）短縮の継続
+  4. 低スペック端末カテゴリp95短縮の継続
   5. 展開時の監視条件・ロールバック条件Runbook整備
 
 ## 4. 既知の制約
@@ -56,7 +62,7 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - 画像はサーバー保存しない（メモリ上の一時処理）。
 - OCR由来メタ情報（confidence等）は保存payloadへ混入させない。
 - 端末性能・ブラウザ性能によりOCR処理時間が変動する。
-- `/card` 展開前に、保存payload・共有URL・ランキング互換への影響を明文化する。
+- `/card` 限定導入後は、保存payload・共有URL・ランキング互換を継続確認する。
 
 ## 5. 注意すべき変更禁止領域
 本フェーズでは以下を変更しない。
@@ -75,4 +81,5 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - `docs/component-design.md`
 - `docs/reviews/ocr-expansion-feasibility-card-compare-issue-103.md`
 - `docs/reviews/issue-105-card-ocr-requirements-and-observability.md`
+- `docs/logs/issue-107-card-ocr-minimum-implementation.md`
 - `docs/active-issues.md`
