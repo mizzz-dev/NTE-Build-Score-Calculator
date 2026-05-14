@@ -29,6 +29,14 @@ describe('payloadBuilders', () => {
     expect(payload.subStats).toHaveLength(1);
   });
 
+
+  it('card保存payloadにOCRメタ情報を含めない', () => {
+    const cardJson = JSON.stringify(createCardPayload({ roleId: base.roleId, slot: base.slot, mainStatKey: base.mainStatKey, mainStatValue: base.mainStatValue, subStats: base.subStats }, 77.7, 'A'));
+    ['confidence', 'rawText', 'matchType', 'candidates', 'processingElapsedMs'].forEach((key) => {
+      expect(cardJson).not.toContain(key);
+    });
+  });
+
   it('ランキング投稿snapshotは巨大ScoreConfigを含まない', () => {
     const payload = createRankingPayloadSnapshot(base, 88.1, 'A+');
     expect(Object.keys(payload)).toEqual(['roleId', 'slot', 'score', 'rank', 'mainStatKey', 'mainStatValue', 'subStats']);

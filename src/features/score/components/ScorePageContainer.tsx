@@ -325,7 +325,7 @@ export function ScorePageContainer() {
             error={ocrError}
             rawText={ocrRawText}
             candidate={ocrDraft}
-            statKeyOptions={statKeyOptions}
+            panelTitle="OCR入力補助（/score）" statKeyOptions={statKeyOptions}
             onRawTextChange={setOcrRawText}
             onSelectImage={handleSelectOcrImage}
             onUpdateCandidate={setOcrDraft}

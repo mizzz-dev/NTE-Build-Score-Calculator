@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NeonPanel } from '@/components/ui/NeonPanel';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { calculateBuildScore } from '@/lib/score';
@@ -14,6 +14,9 @@ import { exportElementToPng } from '../lib/cardImage';
 import { usePublicMaster } from '@/features/public-master/usePublicMaster';
 import { resolveScoreConfig } from '@/features/score/lib/scoreConfigResolver';
 import { createCardPayload } from '@/features/score/lib/payloadBuilders';
+import { ScoreOcrAssistPanel } from '@/features/ocr/components/ScoreOcrAssistPanel';
+import { applyScoreOcrCandidateToForm, canApplyScoreOcrCandidate, runScoreOcrAssist, type ScoreOcrCandidate } from '@/features/ocr/lib/scoreOcrAssist';
+import { createBrowserTesseractAdapter, type OcrProgressStatus } from '@/features/ocr/lib/adapter';
 
 const SLOT_LABELS: Record<SlotType, string> = { cartridge: 'カートリッジ', module: 'モジュール', gear: 'ギア', console: 'コンソール' };
 const DEFAULT_STAT_KEYS: StatKey[] = ['atk_percent', 'crit_rate', 'crit_dmg', 'hp_flat'];
@@ -38,6 +41,15 @@ export function CardPageContainer() {
   const [cloudSaveStatus, setCloudSaveStatus] = useState<'idle'|'saving'|'success'|'error'>('idle');
   const [migrationStatus, setMigrationStatus] = useState<'idle' | 'migrating' | 'success' | 'error'>('idle');
   const [migrationMessage, setMigrationMessage] = useState<string | null>(null);
+
+  const [ocrStatus, setOcrStatus] = useState<'idle' | 'processing' | 'success' | 'error' | 'needs_review'>('idle');
+  const [ocrError, setOcrError] = useState<string | null>(null);
+  const [ocrRawText, setOcrRawText] = useState<string>('');
+  const [ocrDraft, setOcrDraft] = useState<ScoreOcrCandidate | null>(null);
+  const [ocrProgressStatus, setOcrProgressStatus] = useState<'idle' | OcrProgressStatus>('idle');
+  const [ocrProcessingElapsedMs, setOcrProcessingElapsedMs] = useState<number>(0);
+  const [ocrReviewAcknowledged, setOcrReviewAcknowledged] = useState<boolean>(false);
+  const ocrProcessingStartedAtRef = useRef<number | null>(null);
   const auth = useAuthState();
   const cloudEnabled = canUseCloudStorage(auth.user);
   const hasGuestHistoryForMigration = listMigrationGuestHistory().length > 0;
@@ -88,7 +100,56 @@ export function CardPageContainer() {
     }, scoreConfigState.config);
   }, [errors.length, mainStatKey, mainStatValue, roleId, scoreConfigState.config, slot, subStats]);
 
+
+  const statusCandidates = useMemo(() => masterData?.statuses ?? [], [masterData?.statuses]);
+  const unresolvedSubCount = ocrDraft?.subStats.filter((sub) => sub.requiresManual).length ?? 0;
+  const unresolvedCount = (ocrDraft?.requiresManualMain ? 1 : 0) + unresolvedSubCount;
+  const reviewedCount = ocrDraft
+    ? (ocrDraft.mainStatKey && ocrDraft.mainStatValue ? 1 : 0) + ocrDraft.subStats.filter((sub) => sub.key && sub.value).length
+    : 0;
+  const canGenerateCard = Boolean(result) && (!ocrDraft || ocrReviewAcknowledged);
+
   const createdAt = useMemo(() => new Date().toLocaleString('ja-JP'), []);
+
+  useEffect(() => {
+    if (ocrStatus !== 'processing') {
+      ocrProcessingStartedAtRef.current = null;
+      return;
+    }
+    if (ocrProcessingStartedAtRef.current === null) ocrProcessingStartedAtRef.current = Date.now();
+    const timer = window.setInterval(() => {
+      const started = ocrProcessingStartedAtRef.current;
+      if (!started) return;
+      setOcrProcessingElapsedMs(Date.now() - started);
+    }, 250);
+    return () => window.clearInterval(timer);
+  }, [ocrStatus]);
+
+  const handleSelectOcrImage = useCallback(async (file: File | null) => {
+    if (!file) return;
+    setOcrStatus('processing');
+    setOcrProgressStatus('loading_engine');
+    ocrProcessingStartedAtRef.current = Date.now();
+    setOcrProcessingElapsedMs(0);
+    setOcrError(null);
+    setOcrReviewAcknowledged(false);
+    const adapter = createBrowserTesseractAdapter((status) => setOcrProgressStatus(status));
+    const ocrResult = await runScoreOcrAssist({ file, rawText: ocrRawText, statusCandidates, adapter });
+    setOcrStatus(ocrResult.status);
+    setOcrProgressStatus('idle');
+    setOcrError(ocrResult.error);
+    setOcrDraft(ocrResult.candidate);
+  }, [ocrRawText, statusCandidates]);
+
+  const handleApplyOcrDraft = useCallback(() => {
+    if (!ocrDraft || !canApplyScoreOcrCandidate(ocrDraft)) return;
+    const next = applyScoreOcrCandidateToForm(ocrDraft, { slot, mainStatKey, mainStatValue, subStats });
+    setSlot(next.slot);
+    setMainStatKey(next.mainStatKey);
+    setMainStatValue(next.mainStatValue);
+    setSubStats(next.subStats);
+    setOcrReviewAcknowledged(false);
+  }, [mainStatKey, mainStatValue, ocrDraft, slot, subStats]);
 
   const handleSave = async () => {
     if (!previewRef.current) return;
@@ -190,13 +251,28 @@ export function CardPageContainer() {
         <div className="grid gap-2 sm:grid-cols-2"><label className="block text-sm">メインステータス<select className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={mainStatKey} onChange={(e) => setMainStatKey(e.target.value as StatKey)}>{statKeys.map((key) => <option key={key} value={key}>{key}</option>)}</select></label><label className="block text-sm">メイン値<input type="number" min={0} className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" value={mainStatValue} onChange={(e) => setMainStatValue(e.target.value)} /></label></div>
         <div className="space-y-2"><p className="text-sm font-medium">サブステータス</p>{subStats.map((sub, i) => <div className="grid gap-2 sm:grid-cols-2" key={i}><select className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-sm" value={sub.key} onChange={(e) => setSubStats((prev) => prev.map((item, idx) => idx === i ? { ...item, key: e.target.value as StatKey } : item))}>{statKeys.map((key) => <option key={key} value={key}>{key}</option>)}</select><input type="number" min={0} className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-sm" value={sub.value} onChange={(e) => setSubStats((prev) => prev.map((item, idx) => idx === i ? { ...item, value: e.target.value } : item))} placeholder="未入力可" /></div>)}</div>
         <label className="block text-sm">コメント<textarea className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2" rows={3} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="自由入力" /></label>
+        <ScoreOcrAssistPanel status={ocrStatus} progressStatus={ocrProgressStatus} processingElapsedMs={ocrProcessingElapsedMs} error={ocrError} rawText={ocrRawText} candidate={ocrDraft} panelTitle="OCR入力補助（/card）" statKeyOptions={statKeys} onRawTextChange={setOcrRawText} onSelectImage={handleSelectOcrImage} onUpdateCandidate={setOcrDraft} onApplyCandidate={handleApplyOcrDraft} />
+        <div className="rounded-md border border-[var(--color-border)] p-2 text-xs">
+          <p className="font-medium">OCR反映確認（カード生成前）</p>
+          <p className="text-[var(--color-text-secondary)]">OCRは下書き補助です。保存payload・共有URL・ランキングpayloadにはOCRメタ情報を保存しません。</p>
+          {ocrDraft ? <p className={unresolvedCount > 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-accent)]'}>未確定項目: {unresolvedCount}件 / 反映項目: {reviewedCount}件</p> : <p className="text-[var(--color-text-secondary)]">OCR未使用（手動入力導線をそのまま利用できます）。</p>}
+          {ocrStatus === 'error' && <p className="text-[var(--color-danger)]">OCR失敗時はこのまま手動入力へ戻れます。必要に応じて再試行してください。</p>}
+          {ocrDraft && unresolvedCount > 0 && <p className="text-[var(--color-danger)]">未確定項目があるためカード生成前に手動確認してください。</p>}
+          {ocrDraft && (
+            <label className="mt-2 flex items-center gap-2">
+              <input type="checkbox" checked={ocrReviewAcknowledged} onChange={(e) => setOcrReviewAcknowledged(e.target.checked)} />
+              <span>OCR反映項目と未確定項目を確認しました（カード生成前の最終確認）</span>
+            </label>
+          )}
+        </div>
         {masterLoading && <p className="text-xs text-[var(--color-text-secondary)]">公開マスタを読み込み中です...</p>}
         {masterWarning && <p className="text-xs text-[var(--color-text-secondary)]">{masterWarning}</p>}
         {scoreConfigState.notice && <p className="text-xs text-[var(--color-text-secondary)]">{scoreConfigState.notice}</p>}
         <p className="text-xs text-[var(--color-text-secondary)]">設定ソース: {scoreConfigState.source === 'public-master' ? '公開マスタ' : '標準設定（フォールバック）'}</p>
         {errors.length > 0 && <ul className="list-disc pl-5 text-sm text-[var(--color-danger)]">{errors.map((error) => <li key={error}>{error}</li>)}</ul>}
-        <button type="button" className="rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:border-[var(--color-accent)] disabled:opacity-50" onClick={handleSave} disabled={!result || saveState === 'saving'}>PNGで保存</button>
+        <button type="button" className="rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:border-[var(--color-accent)] disabled:opacity-50" onClick={handleSave} disabled={!canGenerateCard || saveState === 'saving'}>PNGで保存</button>
         <button type="button" className="ml-2 rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:border-[var(--color-accent)] disabled:opacity-50" onClick={handleSaveHistory} disabled={!result}>入力結果を履歴保存</button>
+        {!canGenerateCard && ocrDraft && <p className="text-xs text-[var(--color-danger)]">カード生成前にOCR確認チェックを完了してください。</p>}
         {saveState === 'success' && <p className="text-xs text-[var(--color-accent)]">PNG保存を開始しました。</p>}
         {saveState === 'error' && <p className="text-xs text-[var(--color-danger)]">PNG保存に失敗しました。</p>}
         {historySaveStatus === 'success' && <p className="text-xs text-[var(--color-accent)]">履歴に保存しました（最大20件）。</p>}
