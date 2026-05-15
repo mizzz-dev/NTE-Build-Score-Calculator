@@ -1,6 +1,6 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-15（Issue #125 正式展開可否最終判定反映）
+最終更新: 2026-05-15（Issue #127 正式展開後監視運用定常化方針反映）
 
 ## 1. 現在Open Issue
 本ドキュメント作成時点で、詳細なOpen Issue一覧は GitHub 側の最新状態を確認して更新する運用とする。
@@ -12,13 +12,14 @@
 - #117: `/compare` OCR限定導入後のKPI計測と互換性確認（完了: 条件付き継続判定 / 第2サイクル進行可）
 - #115: `/compare` OCR入力補助の最小実装（完了 / A/B別OCR導線・比較前確認ガード追加済み）
 - #113: `/compare` OCR入力補助の要件詳細化・監視設計（完了 / 実装未着手で要件固定）
+- #127: `/compare` OCR正式展開後の監視運用定常化と残リスク改善方針整理（完了: 監査ログ項目・改善Issueテンプレ方針・次Issue候補を整理）
 - OCR関連継続Issue: 精度・UX・運用改善系（個別番号は都度追記）
 
 > 要確認: GitHub上のOpen Issueは変動するため、着手時に必ず最新一覧を同期すること。
 
 ## 2. 次にやるべきIssue候補
-1. `unresolved_items_remaining` / `image_quality_low` 起因の追加改善Issue検討
-2. 条件付き正式展開後の監視運用（しきい値超過時対応の定常化）
+1. `unresolved_items_remaining` / `image_quality_low` 起因改善Issueの分離実装（Issue #127で方針整理済み）
+2. 条件付き正式展開後の監視運用をRunbook + 監査ログで月次運用へ移行
 3. 正式リリース前の品質・SEO・規約整備
 
 ## 3. 優先順位（暫定）

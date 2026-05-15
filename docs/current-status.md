@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-15（Issue #125 正式展開可否判定・Runbook反映）
+最終更新: 2026-05-15（Issue #127 正式展開後監視運用定常化方針を反映）
 
 ## 1. 現在の実装状態
 OCR MVP は、`/score` 画面における入力補助として段階的に導入済みです。保存・共有・ランキングのpayload互換は維持されています。
@@ -110,6 +110,15 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - 正式展開後の監視KPI、警戒しきい値、rollbackしきい値、運用対応方針を定義。
 - rollback条件、rollback手順、OCR導線無効化時確認手順、互換性最低回帰確認手順を `docs/runbooks/compare-ocr-release-runbook.md` に保存。
 - ADR要否を判断し、今回は設計変更なしのためADR不要と記録。
+- OCRアルゴリズム、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は未変更。
+
+
+## 1.15 Issue #127 完了結果（`/compare` OCR正式展開後の監視運用定常化）
+- 正式展開後に日次で記録すべき監査ログ項目（計測メタ、KPI実測、しきい値判定、要因内訳、互換性確認、運用アクション）を整理。
+- しきい値超過時に起票する改善Issueテンプレート方針（必須項目、優先度P0/P1/P2、DoD）を整理。
+- payload非混入・共有URL互換・ランキング互換の継続確認観点と実施タイミング（超過時/rollback時/月次）を定義。
+- 残リスク `unresolved_items_remaining` / `image_quality_low` の改善方針を整理し、実装は次Issue候補へ分離。
+- ADR要否は「不要」（運用定常化であり設計変更なし）と判断。
 - OCRアルゴリズム、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は未変更。
 
 ## 2. 完了済みフェーズ（PR #80 まで）
