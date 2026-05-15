@@ -256,7 +256,7 @@ export function CardPageContainer() {
           <p className="font-medium">OCR反映確認（カード生成前）</p>
           <p className="text-[var(--color-text-secondary)]">OCRは下書き補助です。保存payload・共有URL・ランキングpayloadにはOCRメタ情報を保存しません。</p>
           {ocrDraft ? <p className={unresolvedCount > 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-accent)]'}>未確定項目: {unresolvedCount}件 / 反映項目: {reviewedCount}件</p> : <p className="text-[var(--color-text-secondary)]">OCR未使用（手動入力導線をそのまま利用できます）。</p>}
-          {ocrStatus === 'error' && <p className="text-[var(--color-danger)]">OCR失敗時はこのまま手動入力へ戻れます。必要に応じて再試行してください。</p>}
+          {ocrStatus === 'error' && <p className="text-[var(--color-danger)]">OCR失敗時は再撮影で再試行するか、このまま手動入力へ戻れます。</p>}
           {ocrDraft && unresolvedCount > 0 && <p className="text-[var(--color-danger)]">未確定項目があるためカード生成前に手動確認してください。</p>}
           {ocrDraft && (
             <label className="mt-2 flex items-center gap-2">
