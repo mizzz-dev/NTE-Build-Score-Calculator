@@ -1,11 +1,11 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-15（PR #128 merge後処理 / Issue #129 作成反映）
+最終更新: 2026-05-15（Issue #129 実装進行中）
 
 ## 1. 現在Open Issue
 本ドキュメント作成時点で、詳細なOpen Issue一覧は GitHub 側の最新状態を確認して更新する運用とする。
 
-- #129: `/compare` OCRの未確定項目解消フローのUX文言改善（open）
+- #129: `/compare` OCRの未確定項目解消フローのUX文言改善（実装・テスト・ログ更新まで完了、レビュー待ち）
 - #127: `/compare` OCR正式展開後の監視運用定常化と残リスク改善方針整理（完了: 監査ログ項目・改善Issueテンプレ方針・次Issue候補を整理）
 - #125: `/compare` OCR正式展開可否の最終判定と運用Runbook整備（完了: 条件付き正式展開可判定・監視/rollback手順確定）
 - #123: `/compare` OCR正式展開前改善後の第3サイクルKPI計測（完了: 重点KPI改善・互換維持確認）
