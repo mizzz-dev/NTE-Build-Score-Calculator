@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-15（PR #122 merge後処理 / Issue #123 作成反映）
+最終更新: 2026-05-15（Issue #123 第3サイクルKPI計測反映）
 
 ## 1. 現在の実装状態
 OCR MVP は、`/score` 画面における入力補助として段階的に導入済みです。保存・共有・ランキングのpayload互換は維持されています。
@@ -87,10 +87,21 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - `docs/logs/issue-121-compare-ocr-pre-release-ux-and-observability.md` と `docs/ai-prompts/2026-05-14-issue-121-compare-ocr-pre-release-risk-reduction.md` を保存済み。
 - OCRアルゴリズム、DB、auth、infra、deployment、保存payload仕様、ランキング仕様、画像保存方式は未変更。
 
-## 1.12 現在の次作業（Issue #123）
-- Issue #123 で `/compare` OCR正式展開前改善後の第3サイクルKPI計測を実施する。
-- 第3サイクルでは、低性能端末p95、fallback率、比較前確認離脱率、要因別比率、A/B取り違え誤反映率、payload互換を匿名・集計値で確認する。
-- 第1・第2サイクルとの差分を整理し、正式展開可否判定へ進めるか、追加改善Issueが必要かを判断する。
+## 1.12 直近完了タスク（Issue #123）
+- `/compare` OCR正式展開前改善後の第3サイクルKPI計測を完了。
+- 低性能端末p95、fallback率、比較前確認離脱率、要因別比率、A/B取り違え誤反映率、payload互換を匿名・集計値で確認。
+- 第1・第2サイクルとの差分を整理し、正式展開可否判定へ進行可能な状態を確認。
+
+
+## 1.13 Issue #123 完了結果（`/compare` OCR限定導入 第3サイクル）
+- KPI計測ログを `docs/logs/compare-ocr-limited-release-kpi-cycle-3.md` として作成し、匿名・集計値で記録済み。
+- OCR処理時間p95（全体3.6秒、低3.8秒/中3.4秒/高2.9秒）を確認。
+- A/B取り違え誤反映率0.0%、未確定項目残存率11.4%、比較前確認離脱率3.6%、fallback率7.9%、手動補正率16.4%を記録。
+- fallback要因別比率・比較前確認離脱要因別比率を匿名・集計値で記録。
+- 第1・第2サイクル比で重点KPI（低性能端末p95、fallback率、比較前確認離脱率）はいずれも改善。
+- 保存payload・共有URL・ランキングpayload互換は維持（OCRメタ非混入）。
+- 未確認OCR値の比較計算混入なし、A/B取り違え誤反映なし、低信頼度候補の自動確定0件、OCR失敗時の対象系統のみfallback成立を確認。
+- 判定は「正式展開可否判定へ進行可（条件付き）」。
 
 ## 2. 完了済みフェーズ（PR #80 まで）
 - OCR要件定義
@@ -103,12 +114,11 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - Repository Memory / Context Bootstrap 正本ドキュメント整備
 
 ## 3. 進行中 / 次フェーズ
-- 進行中: 正式展開前改善後の第3サイクルKPI計測フェーズ（Issue #123）
-- 反映済み: Issue #121 で `/compare` OCR正式展開前のUX/観測性最小改善を完了
+- 完了済み: Issue #121（UX/観測性最小改善） / Issue #123（改善後第3サイクルKPI計測）
 - 次フェーズ候補:
-  1. Issue #123: 改善後の第3サイクルKPI計測
-  2. 正式展開可否の最終判定
-  3. 条件付き継続の監視条件運用Runbook整備
+  1. `/compare` OCR正式展開可否の最終判定
+  2. 条件付き継続の監視条件運用Runbook整備
+  3. `unresolved_items_remaining` と `image_quality_low` 起因率低減の追加改善Issue検討
   4. 正式リリース前の品質・SEO・規約整備
 
 ## 4. 既知の制約
