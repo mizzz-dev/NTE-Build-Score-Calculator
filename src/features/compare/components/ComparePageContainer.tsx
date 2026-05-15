@@ -91,7 +91,7 @@ export function ComparePageContainer() {
 
 function CompareOcrCard({ side, state, rawText, progressStatus, elapsedMs, statKeys, onRawTextChange, onSelectImage, onUpdateState, onApply }: { side: CompareSide; state: CompareOcrSideState; rawText: string; progressStatus: 'idle' | OcrProgressStatus; elapsedMs: number; statKeys: StatKey[]; onRawTextChange: (v: string) => void; onSelectImage: (f: File | null) => void; onUpdateState: (updater: (prev: CompareOcrSideState) => CompareOcrSideState) => void; onApply: () => void }) {
   return <NeonPanel className="space-y-2"><ScoreOcrAssistPanel status={state.status} progressStatus={progressStatus} processingElapsedMs={elapsedMs} error={state.error} rawText={rawText} candidate={state.candidate} panelTitle={`OCR入力補助（比較${side}）`} statKeyOptions={statKeys} onRawTextChange={onRawTextChange} onSelectImage={onSelectImage} onUpdateCandidate={(next) => onUpdateState((prev) => ({ ...prev, candidate: next, reviewAcknowledged: false }))} onApplyCandidate={onApply} />
-  {state.status === 'error' && <p className="text-xs text-[var(--color-danger)]">比較{side}のみOCR失敗。手動入力で継続できます。</p>}
+  {state.status === 'error' && <p className="text-xs text-[var(--color-danger)]">比較{side}のみOCR失敗。再撮影で再試行するか、このまま手動入力で継続できます。</p>}
   <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={state.reviewAcknowledged} onChange={(e) => onUpdateState((prev) => ({ ...prev, reviewAcknowledged: e.target.checked }))} />比較{side}のOCR反映内容を確認済み</label></NeonPanel>;
 }
 
