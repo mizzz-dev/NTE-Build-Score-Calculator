@@ -1,11 +1,11 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-15（PR #122 merge後処理 / Issue #123 作成反映）
+最終更新: 2026-05-15（Issue #123 第3サイクルKPI計測完了反映）
 
 ## 1. 現在Open Issue
 本ドキュメント作成時点で、詳細なOpen Issue一覧は GitHub 側の最新状態を確認して更新する運用とする。
 
-- #123: `/compare` OCR正式展開前改善後の第3サイクルKPI計測（open）
+- #123: `/compare` OCR正式展開前改善後の第3サイクルKPI計測（完了: 重点KPI改善・互換維持確認）
 - #121: `/compare` OCR正式展開前の低性能端末p95短縮とfallback・離脱要因分解（完了 / UX案内改善・要因分類方針追加済み）
 - #119: `/compare` OCR限定導入 第2サイクルKPI計測（完了: 2サイクル連続で条件付き継続達成）
 - #117: `/compare` OCR限定導入後のKPI計測と互換性確認（完了: 条件付き継続判定 / 第2サイクル進行可）
@@ -16,21 +16,21 @@
 > 要確認: GitHub上のOpen Issueは変動するため、着手時に必ず最新一覧を同期すること。
 
 ## 2. 次にやるべきIssue候補
-1. #123: `/compare` OCR正式展開前改善後の第3サイクルKPI計測
-2. `/compare` OCR正式展開可否の最終判断
-3. 展開時の監視条件・ロールバック条件運用Runbook整備
+1. `/compare` OCR正式展開可否の最終判断
+2. 展開時の監視条件・ロールバック条件運用Runbook整備
+3. `unresolved_items_remaining` / `image_quality_low` 起因の追加改善Issue検討
 4. 正式リリース前の品質・SEO・規約整備
 
 ## 3. 優先順位（暫定）
-- P1: #123 改善後の第3サイクルKPI計測
-- P1: fallback要因別比率・比較前確認離脱要因別比率の確認
+- P1: `/compare` OCR正式展開可否の最終判断
 - P1: payload非混入・共有URL互換・ランキング互換・比較結果正当性の継続確認
-- P2: 正式展開可否の最終判断
+- P1: 重点KPI（低性能端末p95 / fallback率 / 比較前確認離脱率）の監視継続
 - P2: 展開時の監視条件・ロールバック条件Runbook整備
+- P2: `unresolved_items_remaining` / `image_quality_low` 起因改善
 
 ## 4. Blocker
-- `/compare` OCR最小実装（Issue #115）、第1・第2サイクル検証（Issue #117 / #119）、正式展開前改善（Issue #121）は完了。
-- 次は改善後の第3サイクルKPI計測で、低性能端末p95、fallback/離脱要因別比率、A/B誤反映率、payload互換を確認する。
+- `/compare` OCR最小実装（Issue #115）、第1〜第3サイクル検証（Issue #117 / #119 / #123）、正式展開前改善（Issue #121）は完了。
+- 次は正式展開可否最終判定と監視Runbook整備を進める。
 - OCRアルゴリズム、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は引き続き変更しない。
 
 ## 5. Handoff情報
