@@ -12,8 +12,8 @@ describe('compareOcr guard', () => {
     const sideB = { ...createInitialCompareOcrSideState(), candidate: { ...candidate, requiresManualMain: true }, status: 'needs_review' as const, reviewAcknowledged: true };
     const result = canRunCompareWithOcrGuard({ formAErrors: [], formBErrors: [], sideA, sideB });
     expect(result.canCompare).toBe(false);
-    expect(result.reasons.join(' ')).toContain('比較AはOCR下書き確認が未完了です。');
-    expect(result.reasons.join(' ')).toContain('比較Bに未確定OCR項目が1件あります。');
+    expect(result.reasons.join(' ')).toContain('比較AのOCR下書き確認が未完了です');
+    expect(result.reasons.join(' ')).toContain('比較Bに未確定OCR項目が1件残っています');
   });
 
   it('OCR下書きを反映しても片系統のみ更新される', () => {

@@ -10,7 +10,7 @@ import { resolveScoreConfig } from '@/features/score/lib/scoreConfigResolver';
 import { ScoreOcrAssistPanel } from '@/features/ocr/components/ScoreOcrAssistPanel';
 import { createBrowserTesseractAdapter, type OcrProgressStatus } from '@/features/ocr/lib/adapter';
 import { runScoreOcrAssist } from '@/features/ocr/lib/scoreOcrAssist';
-import { applyCompareOcrDraftToForm, canRunCompareWithOcrGuard, createInitialCompareOcrSideState, type CompareOcrSideState, type CompareSide } from '../lib/compareOcr';
+import { applyCompareOcrDraftToForm, canRunCompareWithOcrGuard, createInitialCompareOcrSideState, type CompareOcrSideState, type CompareSide, unresolvedCount } from '../lib/compareOcr';
 
 const SLOT_LABELS: Record<SlotType, string> = { cartridge: 'カートリッジ', module: 'モジュール', gear: 'ギア', console: 'コンソール' };
 const DEFAULT_STAT_KEYS: StatKey[] = ['atk_percent', 'crit_rate', 'crit_dmg', 'hp_flat'];
@@ -43,6 +43,9 @@ export function ComparePageContainer() {
   const errorsA = useMemo(() => validateCompareForm(formA), [formA]);
   const errorsB = useMemo(() => validateCompareForm(formB), [formB]);
   const guard = useMemo(() => canRunCompareWithOcrGuard({ formAErrors: errorsA, formBErrors: errorsB, sideA: ocrA, sideB: ocrB }), [errorsA, errorsB, ocrA, ocrB]);
+  const unresolvedA = useMemo(() => unresolvedCount(ocrA.candidate), [ocrA.candidate]);
+  const unresolvedB = useMemo(() => unresolvedCount(ocrB.candidate), [ocrB.candidate]);
+  const unresolvedTotal = unresolvedA + unresolvedB;
   const compareResult = useMemo(() => (guard.canCompare ? calculateCompareResult(formA, formB, scoreConfigState.config) : null), [guard.canCompare, formA, formB, scoreConfigState.config]);
 
   const handleOcr = useCallback(async (side: CompareSide, file: File | null) => {
@@ -76,7 +79,7 @@ export function ComparePageContainer() {
       <CompareOcrCard side="A" state={ocrA} rawText={ocrRawTextA} progressStatus={ocrProgressA} elapsedMs={elapsedA} statKeys={statKeys} onRawTextChange={setOcrRawTextA} onSelectImage={(f) => handleOcr('A', f)} onUpdateState={setOcrA} onApply={() => { setFormA((curr) => applyCompareOcrDraftToForm(ocrA.candidate, curr)); setOcrA((p) => ({ ...p, reviewAcknowledged: true })); }} />
       <CompareOcrCard side="B" state={ocrB} rawText={ocrRawTextB} progressStatus={ocrProgressB} elapsedMs={elapsedB} statKeys={statKeys} onRawTextChange={setOcrRawTextB} onSelectImage={(f) => handleOcr('B', f)} onUpdateState={setOcrB} onApply={() => { setFormB((curr) => applyCompareOcrDraftToForm(ocrB.candidate, curr)); setOcrB((p) => ({ ...p, reviewAcknowledged: true })); }} />
     </div>
-    {!guard.canCompare && <NeonPanel className="space-y-1 text-sm"><p className="font-medium text-[var(--color-danger)]">比較実行前にA/Bの確認が必要です。</p><ul className="list-disc pl-5 text-[var(--color-danger)]">{guard.reasons.map((r) => <li key={r}>{r}</li>)}</ul></NeonPanel>}
+    {!guard.canCompare && <NeonPanel className="space-y-2 text-sm"><p className="font-medium text-[var(--color-danger)]">比較実行前にA/Bの確認が必要です（未確定0件で比較可能）。</p><p className="text-xs text-[var(--color-danger)]">未確定残件: 合計{unresolvedTotal}件（A: {unresolvedA}件 / B: {unresolvedB}件）</p><p className="text-xs text-[var(--color-text-secondary)]">確認順ガイド: 1) 比較Aの未確定を解消 → 2) 比較Bの未確定を解消 → 3) A/Bの確認済みチェックをON</p><ul className="list-disc pl-5 text-[var(--color-danger)]">{guard.reasons.map((r) => <li key={r}>{r}</li>)}</ul></NeonPanel>}
 
     {masterLoading && <p className="text-xs text-[var(--color-text-secondary)]">公開マスタを読み込み中です...</p>}
     {masterWarning && <p className="text-xs text-[var(--color-text-secondary)]">{masterWarning}</p>}

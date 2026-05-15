@@ -32,9 +32,9 @@ export function canRunCompareWithOcrGuard(params: { formAErrors: string[]; formB
   sides.forEach(({ label, state }) => {
     if (!state.candidate) return;
     const unresolved = unresolvedCount(state.candidate);
-    if (!state.reviewAcknowledged) reasons.push(`比較${label}はOCR下書き確認が未完了です。`);
+    if (!state.reviewAcknowledged) reasons.push(`比較${label}のOCR下書き確認が未完了です（比較${label} → 未確定解消 → 確認済みチェックの順で進めてください）。`);
     if (state.status === 'error') reasons.push(`比較${label}でOCR失敗状態が残っています。手動入力へ戻るか再試行してください。`);
-    if (unresolved > 0) reasons.push(`比較${label}に未確定OCR項目が${unresolved}件あります。`);
+    if (unresolved > 0) reasons.push(`比較${label}に未確定OCR項目が${unresolved}件残っています（比較${label}の候補を先に補正してください）。`);
   });
 
   return { canCompare: reasons.length === 0, reasons };
