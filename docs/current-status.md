@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-15（Issue #123 第3サイクルKPI計測反映）
+最終更新: 2026-05-15（Issue #125 正式展開可否判定・Runbook反映）
 
 ## 1. 現在の実装状態
 OCR MVP は、`/score` 画面における入力補助として段階的に導入済みです。保存・共有・ランキングのpayload互換は維持されています。
@@ -102,6 +102,15 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - 保存payload・共有URL・ランキングpayload互換は維持（OCRメタ非混入）。
 - 未確認OCR値の比較計算混入なし、A/B取り違え誤反映なし、低信頼度候補の自動確定0件、OCR失敗時の対象系統のみfallback成立を確認。
 - 判定は「正式展開可否判定へ進行可（条件付き）」。
+
+
+## 1.14 Issue #125 完了結果（`/compare` OCR正式展開可否最終判定）
+- 第1〜第3サイクルKPI推移を整理し、最終判定を **条件付き正式展開可** として記録。
+- 判定ログを `docs/logs/compare-ocr-release-decision.md` に保存。
+- 正式展開後の監視KPI、警戒しきい値、rollbackしきい値、運用対応方針を定義。
+- rollback条件、rollback手順、OCR導線無効化時確認手順、互換性最低回帰確認手順を `docs/runbooks/compare-ocr-release-runbook.md` に保存。
+- ADR要否を判断し、今回は設計変更なしのためADR不要と記録。
+- OCRアルゴリズム、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は未変更。
 
 ## 2. 完了済みフェーズ（PR #80 まで）
 - OCR要件定義
