@@ -1,42 +1,44 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-15（Issue #133 対応反映）
+最終更新: 2026-05-15（PR #134 merge後処理 / Issue #135 作成反映）
 
 ## 1. 現在Open Issue
 
+- #135: 条件付き正式展開後のOCR監視運用を月次サイクルへ移行（open）
 - #133: `image_quality_low` 起因の事前撮影ガイド・再撮影導線改善（完了）
 - #131: `/compare` 比較ブロック理由に応じて案内文を出し分ける（完了）
 - #129: `/compare` OCRの未確定項目解消フローのUX文言改善（完了）
 - #127: `/compare` OCR正式展開後の監視運用定常化と残リスク改善方針整理（完了）
 - #125: `/compare` OCR正式展開可否の最終判定と運用Runbook整備（完了）
-- OCR関連継続Issue: 精度・UX・運用改善系（個別番号は都度追記）
 
 > 要確認: GitHub上のOpen Issueは変動するため、着手時に必ず最新一覧を同期すること。
 
 ## 2. 次にやるべきIssue候補
 
-1. 条件付き正式展開後の監視運用をRunbook + 監査ログで月次運用へ移行
+1. #135: 条件付き正式展開後のOCR監視運用を月次サイクルへ移行
 2. 正式リリース前の品質・SEO・規約整備
-3. 正式リリース前の品質・SEO・規約整備
-4. 利用規約・免責・非公式ファンツール表記の再確認
+3. 利用規約・免責・非公式ファンツール表記の再確認
+4. 商用利用前の権利・法務確認
 
 ## 3. 優先順位（暫定）
 
+- P1: #135 月次監査ログテンプレート整備
+- P1: #135 月次運用手順・しきい値超過時対応の明文化
 - P1: payload非混入・共有URL互換・ランキング互換・比較結果正当性の継続確認
-- P1: 正式展開後KPI監視（fallback率・手動補正率・離脱率）
-- P2: 条件付き正式展開後の運用Runbook適用と監査ログ蓄積
 - P2: 正式リリース前の品質・SEO・規約整備
+- P2: 利用規約・免責・非公式ファンツール表記の再確認
 
 ## 4. Blocker
 
-- Issue #131 / PR #132 は完了済み。
-- 次はIssue #127で分離された残リスクのうち、`image_quality_low` 起因の改善を進める。
+- Issue #133 / PR #134 は完了済み。
+- 次は条件付き正式展開後の監視運用を、Runbookと監査ログに基づく月次サイクルへ移行する。
 - OCRアルゴリズム、OCR信頼度計算、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は引き続き変更しない。
+- 監視ログは匿名・集計値のみを扱い、画像や個人情報を保存しない。
 
 ## 5. Handoff情報
 
 - まず `docs/current-status.md` と `docs/architecture/system-overview.md` を読む。
 - 次に `docs/runbooks/compare-ocr-release-runbook.md` と `docs/logs/issue-127-compare-ocr-post-release-monitoring-operations.md` を確認する。
-- Issue #133では、OCR実行前の撮影ガイドとOCR失敗・低品質疑い時の再撮影/手動fallback導線を改善する。
+- Issue #135では、月次監査ログテンプレート、月次運用手順、しきい値超過時対応、改善Issue起票基準を整備する。
 - 低信頼度候補の自動確定、OCRアルゴリズム変更、保存payload仕様変更は行わない。
 - 評価画像や個人情報をRepositoryへ保存しない。
