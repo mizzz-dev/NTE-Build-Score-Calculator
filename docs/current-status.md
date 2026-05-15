@@ -1,185 +1,73 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-15（Issue #129 UX文言改善 実装反映）
+最終更新: 2026-05-15（PR #130 merge後処理 / Issue #131 作成反映）
 
 ## 1. 現在の実装状態
-OCR MVP は、`/score` 画面における入力補助として段階的に導入済みです。保存・共有・ランキングのpayload互換は維持されています。
 
-## 1.1 第3・第4サイクル実測結果サマリ（Issue #99 / #101）
-- 第3サイクルログの統計整合性を再確認し、4秒超過導線到達率の分母誤記を是正（39→5）。
-- 第4サイクルで受け入れKPIを全項目達成（OCR処理時間 p95=3.8秒）。
-- 第3・第4の連続2サイクルで全KPI達成を確認。
-- `/card` `/compare` へのOCR展開は本Issueでは未実装とし、次Issueで要件再評価レビューへ進行。
+OCR MVP は、`/score` から `/card`、`/compare` へ段階的に展開済みです。OCRは入力補助であり、最終確定はユーザーの手動確認を必須とします。保存payload・共有URL・ランキングpayloadへOCR由来メタ情報を混入させない方針を維持しています。
 
-## 1.2 Issue #103 展開可否レビュー結果
-- `/card`・`/compare` へのOCR入力補助展開可否を要件・影響・リスク・運用条件で再評価。
-- 判定は「条件付き可」。
-- 条件: payload非混入維持、ランキング/共有URL互換維持、低スペック端末監視強化、段階展開・ロールバック条件明文化。
+## 2. 完了済みの主要フェーズ
 
-## 1.3 Issue #105 要件詳細化結果
-- Issue #105 で `/card` OCR入力補助の要件詳細化・監視設計ドキュメントを作成済み。
-- 成果物: `docs/reviews/issue-105-card-ocr-requirements-and-observability.md`
-- `/card` の責務整理、`/score` からの流用/分離責務、項目別反映ルール、payload非混入方針、監視KPI、ロールバック条件、次実装Issue最小スコープを定義済み。
+- `/score` OCR入力補助の導入と複数サイクルKPI確認。
+- `/card` OCR入力補助の要件詳細化、最小実装、限定導入後KPI確認。
+- `/compare` OCR入力補助の要件詳細化、最小実装、限定導入後KPI確認。
+- `/compare` OCRは第1〜第3サイクルで重点KPIを確認し、条件付き正式展開可と判定済み。
+- 正式展開後の監視運用方針、Runbook、監査ログ項目、改善Issue方針を整理済み。
 
-## 1.4 Issue #107 実装反映状況
-- `/card` にOCR入力補助UI導線を最小構成で追加済み（限定公開前提）。
-- OCR結果は下書きとして扱い、カード生成前に確認チェックを必須化済み。
-- 低信頼度項目は自動確定せず、未確定表示のまま手動確認待ちを維持。
-- OCR失敗時に手動入力へ戻るfallback導線を維持。
-- 保存payload・共有URL・ランキングpayload仕様は変更なし（非混入方針維持）。
-- `/compare` への影響はなし。
+## 3. 直近完了タスク（Issue #129 / PR #130）
 
-## 1.5 Issue #109 完了結果（/card OCR限定導入後検証）
-- KPI計測ログを `docs/logs/card-ocr-limited-release-kpi.md` として作成し、匿名・集計値で記録済み。
-- OCR処理時間p95（全体3.9秒、低4.2秒/中3.7秒/高3.1秒）を確認。
-- 補正率18.3%、未確定項目残存率13.8%、反映前確認離脱率4.2%、fallback率9.2%を記録。
-- 保存payload・共有URL・ランキングpayload互換は維持（OCRメタ混入なし）。
-- `/compare` 副作用なし、低信頼度候補の自動確定なし、OCR失敗時の手動fallback成立を確認。
-- 限定導入判定は「条件付き継続」（低性能端末p95が閾値近傍のため監視継続）。
+Issue #129 / PR #130 で `/compare` OCRの未確定項目解消フローのUX文言改善を実施済みです。
 
-## 1.6 Issue #111 完了結果（/card OCR限定導入 第2サイクル）
-- KPI計測ログを `docs/logs/card-ocr-limited-release-kpi-cycle-2.md` として作成し、匿名・集計値で記録済み。
-- OCR処理時間p95（全体3.7秒、低4.0秒/中3.5秒/高3.0秒）を確認。
-- 補正率17.1%、未確定項目残存率12.5%、反映前確認離脱率3.9%、fallback率8.4%を記録。
-- 第1サイクル比で全KPIが改善。
-- 保存payload・共有URL・ランキングpayload互換は維持（OCRメタ混入なし）。
-- `/compare` 副作用なし、低信頼度候補の自動確定なし、OCR失敗時の手動fallback成立を確認。
-- `/card` OCR限定導入は2サイクル連続で継続条件を達成。
-
-## 1.7 Issue #113 完了結果（`/compare` OCR要件詳細化）
-- Issue #113 で `/compare` OCR入力補助の要件詳細化・監視設計ドキュメントを作成済み。
-- 成果物: `docs/reviews/issue-113-compare-ocr-requirements-and-observability.md`
-- `/compare` の責務境界（入力/表示/比較計算/共有URL/保存・ランキング）を固定し、`/score`・`/card` からの流用責務と分離責務を整理。
-- A/B 2系統入力のOCR反映ルール、下書き扱い、比較前手動確認必須、低信頼度未確定維持を明記。
-- OCRメタの保存payload・共有URL・ランキングpayload非混入方針、比較結果への未確認値混入防止条件を明文化。
-- 監視KPI（誤反映率/未確定残存率/比較前確認離脱率/fallback率/端末別p95）と限定公開ロールバック条件を定義。
-
-## 1.8 Issue #115 実装反映状況（`/compare` OCR最小導入）
-- `/compare` にA/B別OCR入力補助導線を最小構成で追加済み。
-- A/B別OCR下書き状態を分離し、比較前確認ガード（A/B確認済み + 未確定0件）を導入済み。
-- 未確認/未確定項目がある場合は比較結果を算出しないガードを導入済み。
-- OCR失敗時は対象系統のみ失敗表示し、手動入力fallbackを維持。
-- 保存payload・共有URL・ランキングpayload仕様は変更なし（OCRメタ非混入維持）。
-- `src/features/compare/lib/compareOcr.test.ts` に、未確認/未確定時の比較ブロックと片側反映確認テストを追加済み。
-
-## 1.9 Issue #117 完了結果（`/compare` OCR限定導入後検証）
-- KPI計測ログを `docs/logs/compare-ocr-limited-release-kpi.md` として作成し、匿名・集計値で記録済み。
-- OCR処理時間p95（全体3.9秒、低4.2秒/中3.7秒/高3.2秒）を確認。
-- A/B取り違え誤反映率0.0%、未確定項目残存率14.1%、比較前確認離脱率4.7%、fallback率9.4%、手動補正率19.2%を記録。
-- OCR未使用時の手動入力導線・比較結果不変、保存payload/共有URL/ランキングpayload互換維持（OCRメタ非混入）を確認。
-- 未確認OCR値の比較計算混入なし、A/B取り違え誤反映なし、低信頼度候補の自動確定0件、OCR失敗時の対象系統のみfallback成立を確認。
-- 判定は「条件付き継続」。第2サイクル計測へ進行可（低性能端末p95監視継続）。
-
-## 1.10 Issue #119 完了結果（`/compare` OCR限定導入 第2サイクル）
-- KPI計測ログを `docs/logs/compare-ocr-limited-release-kpi-cycle-2.md` として作成し、匿名・集計値で記録済み。
-- OCR処理時間p95（全体3.7秒、低4.0秒/中3.5秒/高3.0秒）を確認。
-- A/B取り違え誤反映率0.0%、未確定項目残存率12.6%、比較前確認離脱率4.1%、fallback率8.6%、手動補正率17.8%を記録。
-- 第1サイクル比で全KPIが改善。
-- 保存payload・共有URL・ランキングpayload互換は維持（OCRメタ非混入）。
-- 未確認OCR値の比較計算混入なし、A/B取り違え誤反映なし、低信頼度候補の自動確定0件、OCR失敗時の対象系統のみfallback成立を確認。
-- `/compare` OCR限定導入は2サイクル連続で継続条件を達成。
-- 正式展開前は改善Issue先行（低性能端末p95短縮・fallback/離脱要因分解）を推奨。
-
-## 1.11 Issue #121 完了結果（正式展開前UX/観測性改善）
-- 低性能端末向け待機案内を最小文言調整し、待機継続・再試行・手動fallback判断とA/B入力値保持を明示。
-- fallback要因分類と比較前確認離脱要因分類の純関数を `src/features/compare/lib/compareOcrObservability.ts` に追加。
-- 優先順位固定の単体テストを `src/features/compare/lib/compareOcrObservability.test.ts` に追加。
-- `docs/logs/issue-121-compare-ocr-pre-release-ux-and-observability.md` と `docs/ai-prompts/2026-05-14-issue-121-compare-ocr-pre-release-risk-reduction.md` を保存済み。
-- OCRアルゴリズム、DB、auth、infra、deployment、保存payload仕様、ランキング仕様、画像保存方式は未変更。
-
-## 1.12 直近完了タスク（Issue #123）
-- `/compare` OCR正式展開前改善後の第3サイクルKPI計測を完了。
-- 低性能端末p95、fallback率、比較前確認離脱率、要因別比率、A/B取り違え誤反映率、payload互換を匿名・集計値で確認。
-- 第1・第2サイクルとの差分を整理し、正式展開可否判定へ進行可能な状態を確認。
-
-
-## 1.13 Issue #123 完了結果（`/compare` OCR限定導入 第3サイクル）
-- KPI計測ログを `docs/logs/compare-ocr-limited-release-kpi-cycle-3.md` として作成し、匿名・集計値で記録済み。
-- OCR処理時間p95（全体3.6秒、低3.8秒/中3.4秒/高2.9秒）を確認。
-- A/B取り違え誤反映率0.0%、未確定項目残存率11.4%、比較前確認離脱率3.6%、fallback率7.9%、手動補正率16.4%を記録。
-- fallback要因別比率・比較前確認離脱要因別比率を匿名・集計値で記録。
-- 第1・第2サイクル比で重点KPI（低性能端末p95、fallback率、比較前確認離脱率）はいずれも改善。
-- 保存payload・共有URL・ランキングpayload互換は維持（OCRメタ非混入）。
-- 未確認OCR値の比較計算混入なし、A/B取り違え誤反映なし、低信頼度候補の自動確定0件、OCR失敗時の対象系統のみfallback成立を確認。
-- 判定は「正式展開可否判定へ進行可（条件付き）」。
-
-
-## 1.14 Issue #125 完了結果（`/compare` OCR正式展開可否最終判定）
-- 第1〜第3サイクルKPI推移を整理し、最終判定を **条件付き正式展開可** として記録。
-- 判定ログを `docs/logs/compare-ocr-release-decision.md` に保存。
-- 正式展開後の監視KPI、警戒しきい値、rollbackしきい値、運用対応方針を定義。
-- rollback条件、rollback手順、OCR導線無効化時確認手順、互換性最低回帰確認手順を `docs/runbooks/compare-ocr-release-runbook.md` に保存。
-- ADR要否を判断し、今回は設計変更なしのためADR不要と記録。
-- OCRアルゴリズム、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は未変更。
-
-
-## 1.15 Issue #127 完了結果（`/compare` OCR正式展開後の監視運用定常化）
-- 正式展開後に日次で記録すべき監査ログ項目（計測メタ、KPI実測、しきい値判定、要因内訳、互換性確認、運用アクション）を整理。
-- しきい値超過時に起票する改善Issueテンプレート方針（必須項目、優先度P0/P1/P2、DoD）を整理。
-- payload非混入・共有URL互換・ランキング互換の継続確認観点と実施タイミング（超過時/rollback時/月次）を定義。
-- 残リスク `unresolved_items_remaining` / `image_quality_low` の改善方針を整理し、実装は次Issue候補へ分離。
-- ADR要否は「不要」（運用定常化であり設計変更なし）と判断。
-- OCRアルゴリズム、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は未変更。
-
-## 1.16 現在の次作業（Issue #129）
-- Issue #129 で `/compare` OCRの未確定項目解消フローのUX文言改善を実施する。
-- `unresolved_items_remaining` 起因の比較前確認離脱リスクを下げるため、未確定項目の残件数、A/B対象、確認順ガイドを分かりやすくする。
-- OCRアルゴリズム、OCR信頼度計算、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は変更しない。
-- 未確定0件まで比較実行をブロックする既存ガード、低信頼度候補を自動確定しない方針、OCRメタ非混入方針は維持する。
-
-
-## 1.17 Issue #129 対応状況（`/compare` OCR未確定項目解消フローUX文言改善）
+実施内容:
 - 比較前確認ガードの文言を更新し、未確定残件数（合計/A/B）とA/B対象を明示。
-- 比較前ブロックパネルへ確認順ガイド（A解消→B解消→確認済みチェック）を追加。
-- 未確定0件まで比較実行をブロックする既存ガードは維持。
-- 低信頼度候補の自動確定は行わない方針を維持。
+- 比較前ブロックパネルへ確認順ガイド（A解消 → B解消 → 確認済みチェック）を追加。
+- 未確定0件まで比較実行をブロックする既存ガードを維持。
+- 低信頼度候補を自動確定しない方針を維持。
 - 保存payload・共有URL・ランキングpayloadへのOCRメタ非混入方針を維持。
 
-## 2. 完了済みフェーズ（PR #80 まで）
-- OCR要件定義
-- ブラウザ内OCR PoC
-- `/score` OCR入力補助UI
-- OCR実行アダプタ
-- OCR UI責務分離（Container/Panel分割）
-- Tesseract.js 遅延読み込み接続
-- OCRステータスマッピング精度改善
-- Repository Memory / Context Bootstrap 正本ドキュメント整備
+## 4. 現在の次作業（Issue #131）
 
-## 3. 進行中 / 次フェーズ
-- 進行中: Issue #129（`/compare` OCR未確定項目解消フローのUX文言改善）
-- 完了済み: Issue #127（正式展開後監視運用定常化）
-- 次フェーズ候補:
-  1. Issue #129: `unresolved_items_remaining` 起因改善として `/compare` OCRの未確定項目解消フローUX改善
-  2. `image_quality_low` 起因の事前撮影ガイド・再撮影導線改善
-  3. 条件付き正式展開後の監視運用をRunbook + 監査ログで月次運用へ移行
-  4. 正式リリース前の品質・SEO・規約整備
+Issue #131 で `/compare` の比較ブロック理由に応じた案内文出し分けを実施します。
 
-## 4. 既知の制約
-- OCRは入力補助であり、最終確定はユーザー手動確認が必須。
-- 画像はサーバー保存しない（メモリ上の一時処理）。
-- OCR由来メタ情報（confidence等）は保存payloadへ混入させない。
-- 端末性能・ブラウザ性能によりOCR処理時間が変動する。
-- `/compare` 限定導入後は、A/B取り違え誤反映と未確認OCR値の比較結果混入を重点監視する。
+目的:
+- 入力エラーのみで比較がブロックされる場合は、OCR未確定向けガイドを表示しない。
+- OCR下書き確認未完了、未確定OCR項目残存、OCR失敗状態などOCR由来の理由がある場合のみ、未確定残件数と確認順ガイドを表示する。
+- 未確定0件まで比較実行をブロックする既存ガードを維持する。
+- 低信頼度候補を自動確定しない方針を維持する。
+- OCRメタ非混入方針を維持する。
 
-## 5. 注意すべき変更禁止領域
+## 5. 進行中 / 次フェーズ
+
+- 進行中: Issue #131（`/compare` 比較ブロック理由に応じた案内文出し分け）
+- 次候補:
+  1. `image_quality_low` 起因の事前撮影ガイド・再撮影導線改善
+  2. 条件付き正式展開後の監視運用をRunbook + 監査ログで月次運用へ移行
+  3. 正式リリース前の品質・SEO・規約整備
+
+## 6. 注意すべき変更禁止領域
+
 本フェーズでは以下を変更しない。
-- OCRアルゴリズムの大幅変更（MVP範囲外）
-- DB migration の追加
+
+- OCRアルゴリズム
+- OCR信頼度計算
+- DB migration
 - auth / infra / deployment 設定
 - 保存payload仕様
+- 共有URL仕様
 - ランキング仕様
-- 管理画面CRUD
+- 画像保存方式
+- 外部OCR API連携
+- 低信頼度候補の自動確定
 
-## 6. 参照ドキュメント
+## 7. 参照ドキュメント
+
+- `docs/ai-protocol/PROMPT.txt`
 - `docs/ocr-requirements.md`
 - `docs/scoring-spec.md`
 - `docs/data-design.md`
 - `docs/component-design.md`
-- `docs/reviews/ocr-expansion-feasibility-card-compare-issue-103.md`
-- `docs/reviews/issue-105-card-ocr-requirements-and-observability.md`
 - `docs/reviews/issue-113-compare-ocr-requirements-and-observability.md`
-- `docs/logs/issue-115-compare-ocr-minimum-implementation.md`
-- `docs/logs/compare-ocr-limited-release-kpi.md`
-- `docs/logs/compare-ocr-limited-release-kpi-cycle-2.md`
-- `docs/logs/issue-121-compare-ocr-pre-release-ux-and-observability.md`
+- `docs/runbooks/compare-ocr-release-runbook.md`
+- `docs/logs/issue-127-compare-ocr-post-release-monitoring-operations.md`
+- `docs/logs/2026-05-15-issue-129-compare-ocr-unresolved-ux-copy.md`
 - `docs/active-issues.md`
