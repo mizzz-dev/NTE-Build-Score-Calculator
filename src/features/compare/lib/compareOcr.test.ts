@@ -16,6 +16,28 @@ describe('compareOcr guard', () => {
     expect(result.reasons.join(' ')).toContain('比較Bに未確定OCR項目が1件残っています');
   });
 
+
+
+  it('入力エラーのみのブロック時はOCRガイド表示条件を満たさない', () => {
+    const result = canRunCompareWithOcrGuard({
+      formAErrors: ['A error'],
+      formBErrors: ['B error'],
+      sideA: createInitialCompareOcrSideState(),
+      sideB: createInitialCompareOcrSideState(),
+    });
+    expect(result.canCompare).toBe(false);
+    expect(result.hasOcrBlockingReason).toBe(false);
+    expect(result.reasonDetails.every((reason) => reason.category === 'input')).toBe(true);
+  });
+
+  it('OCR由来のブロック理由がある場合はOCRガイド表示条件を満たす', () => {
+    const sideA = { ...createInitialCompareOcrSideState(), candidate: { ...candidate, requiresManualMain: true }, status: 'needs_review' as const, reviewAcknowledged: false };
+    const result = canRunCompareWithOcrGuard({ formAErrors: ['A error'], formBErrors: [], sideA, sideB: createInitialCompareOcrSideState() });
+    expect(result.canCompare).toBe(false);
+    expect(result.hasOcrBlockingReason).toBe(true);
+    expect(result.reasonDetails.some((reason) => reason.category === 'ocr')).toBe(true);
+  });
+
   it('OCR下書きを反映しても片系統のみ更新される', () => {
     const formA = structuredClone(form);
     const formB = { ...structuredClone(form), mainStatValue: '99' };
