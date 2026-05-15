@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-15（Issue #127 正式展開後監視運用定常化方針を反映）
+最終更新: 2026-05-15（PR #128 merge後処理 / Issue #129 作成反映）
 
 ## 1. 現在の実装状態
 OCR MVP は、`/score` 画面における入力補助として段階的に導入済みです。保存・共有・ランキングのpayload互換は維持されています。
@@ -121,6 +121,12 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - ADR要否は「不要」（運用定常化であり設計変更なし）と判断。
 - OCRアルゴリズム、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は未変更。
 
+## 1.16 現在の次作業（Issue #129）
+- Issue #129 で `/compare` OCRの未確定項目解消フローのUX文言改善を実施する。
+- `unresolved_items_remaining` 起因の比較前確認離脱リスクを下げるため、未確定項目の残件数、A/B対象、確認順ガイドを分かりやすくする。
+- OCRアルゴリズム、OCR信頼度計算、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は変更しない。
+- 未確定0件まで比較実行をブロックする既存ガード、低信頼度候補を自動確定しない方針、OCRメタ非混入方針は維持する。
+
 ## 2. 完了済みフェーズ（PR #80 まで）
 - OCR要件定義
 - ブラウザ内OCR PoC
@@ -132,11 +138,12 @@ OCR MVP は、`/score` 画面における入力補助として段階的に導入
 - Repository Memory / Context Bootstrap 正本ドキュメント整備
 
 ## 3. 進行中 / 次フェーズ
-- 完了済み: Issue #121（UX/観測性最小改善） / Issue #123（改善後第3サイクルKPI計測）
+- 進行中: Issue #129（`/compare` OCR未確定項目解消フローのUX文言改善）
+- 完了済み: Issue #127（正式展開後監視運用定常化）
 - 次フェーズ候補:
-  1. `/compare` OCR正式展開可否の最終判定
-  2. 条件付き継続の監視条件運用Runbook整備
-  3. `unresolved_items_remaining` と `image_quality_low` 起因率低減の追加改善Issue検討
+  1. Issue #129: `unresolved_items_remaining` 起因改善として `/compare` OCRの未確定項目解消フローUX改善
+  2. `image_quality_low` 起因の事前撮影ガイド・再撮影導線改善
+  3. 条件付き正式展開後の監視運用をRunbook + 監査ログで月次運用へ移行
   4. 正式リリース前の品質・SEO・規約整備
 
 ## 4. 既知の制約
