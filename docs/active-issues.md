@@ -1,10 +1,10 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-16（PR #144 merge後処理 / Issue #145 作成反映）
+最終更新: 2026-05-16（Issue #145 sitemap方針確定・実装反映）
 
 ## 1. 現在Open Issue
 
-- #145: sitemap実装要否の確定と必要時のsitemap.ts追加（open）
+- #145: sitemap実装要否の確定と必要時のsitemap.ts追加（完了）
 - #143: canonicalページ別方針見直し / metadata noindex反映（完了）
 - #141: metadata・OGP・canonical・robots の公開前最終整備（完了）
 - #139: 利用規約・免責・プライバシー方針ページ整備（完了）
@@ -15,23 +15,21 @@
 
 ## 2. 次にやるべきIssue候補
 
-1. #145: sitemap実装要否の確定と必要時のsitemap.ts追加（P1）
-2. 商用利用前の権利・法務確認（要確認）
-3. 正式リリース準備・リリースノート作成
-4. 公開前最終チェックリスト整備
+1. 商用利用前の権利・法務確認（要確認）
+2. 正式リリース準備・リリースノート作成
+3. 公開前最終チェックリスト整備
 
 ## 3. 優先順位（暫定）
 
-- P1: #145 sitemap実装要否の確定
-- P1: #145 robots.ts のsitemap参照とsitemap本体の整合確認
 - P1: secretや環境変数が公開されていないことの継続監査
+- P1: 公開前のSEO/規約表示最終監査
 - P2: 正式リリース準備・リリースノート作成
 - P2: 商用利用前の権利・法務確認
 
 ## 4. Blocker
 
 - Issue #143 / PR #144 は完了済み。
-- 次はIssue #145で、robots.ts の sitemap.xml 参照とsitemap本体の有無を整合させる。
+- Issue #145で、robots.ts の sitemap.xml 参照とsitemap本体の整合は完了。
 - 法務判断の確定は引き続き対象外（要確認）。
 - 公式素材・ゲーム画像は追加しない。
 - OCRアルゴリズム、OCR信頼度計算、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は引き続き変更しない。
@@ -41,8 +39,7 @@
 - まず `docs/current-status.md` と `docs/ai-protocol/PROMPT.txt` を読む。
 - Issue #141 対応内容は `docs/logs/2026-05-16-issue-141-metadata-ogp-canonical-robots.md` を参照。
 - Issue #143 対応内容は `docs/logs/2026-05-16-issue-143-canonical-metadata-noindex-fix.md` を参照。
-- Issue #145では、`src/app/robots.ts` と公開対象ページ一覧を確認する。
-- sitemapを実装する場合は、Next.jsの `MetadataRoute.Sitemap` を使い必要最小限にする。
-- sitemapを実装しない場合は、robotsのsitemap参照も含めて方針を明記する。
+- Issue #145対応結果は `src/app/sitemap.ts` と `docs/logs/2026-05-16-issue-145-sitemap-decision-and-implementation.md` を参照する。
+- `NEXT_PUBLIC_ROBOTS_NOINDEX=true` 時は `sitemap.ts` が空配列を返すため、公開前noindex方針と整合する。
 - 公式素材・ゲーム画像は追加しない。
 - 評価画像や個人情報をRepositoryへ保存しない。
