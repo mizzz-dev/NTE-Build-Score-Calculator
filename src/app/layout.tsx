@@ -3,6 +3,7 @@ import './globals.css';
 import { AppShell } from '@/components/layout/AppShell';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://nte-build-score-calculator.vercel.app';
+const isNoIndex = process.env.NEXT_PUBLIC_ROBOTS_NOINDEX === 'true';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -12,15 +13,20 @@ export const metadata: Metadata = {
   },
   description:
     'Neverness to Everness（NTE）のビルドスコア計算を支援する非公式ファンツールです。OCRは入力補助であり、最終確認は利用者が行ってください。',
-  alternates: {
-    canonical: '/',
-  },
+  robots: isNoIndex
+    ? {
+        index: false,
+        follow: false,
+      }
+    : {
+        index: true,
+        follow: true,
+      },
   openGraph: {
     title: 'NTE Build Score Calculator | 非公式ファンツール',
     description:
       'Neverness to Everness（NTE）のビルドスコア計算を支援する非公式ファンツールです。OCRは入力補助であり、最終確認は利用者が行ってください。',
     type: 'website',
-    url: '/',
     siteName: 'NTE Build Score Calculator',
     locale: 'ja_JP',
   },

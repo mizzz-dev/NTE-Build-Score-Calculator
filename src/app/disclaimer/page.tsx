@@ -3,6 +3,9 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: '免責事項 | NTE Build Score Calculator',
   description: 'NTE Build Score Calculator の免責事項（要確認事項を含む）',
+  alternates: {
+    canonical: '/disclaimer',
+  },
 };
 
 export default function DisclaimerPage() {

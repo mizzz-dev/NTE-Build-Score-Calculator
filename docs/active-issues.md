@@ -1,10 +1,10 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-16（PR #142 merge後処理 / Issue #143 作成反映）
+最終更新: 2026-05-16（Issue #143 対応反映）
 
 ## 1. 現在Open Issue
 
-- #143: canonicalページ別方針見直し / metadata noindex反映（open）
+- #143: canonicalページ別方針見直し / metadata noindex反映（対応済み・PR作成待ち）
 - #141: metadata・OGP・canonical・robots の公開前最終整備（完了）
 - #139: 利用規約・免責・プライバシー方針ページ整備（完了）
 - #137: 正式リリース前の品質・SEO・規約表示確認（完了）
