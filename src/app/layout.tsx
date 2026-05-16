@@ -2,9 +2,34 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AppShell } from '@/components/layout/AppShell';
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://nte-build-score-calculator.vercel.app';
+
 export const metadata: Metadata = {
-  title: 'NTE Build Score Calculator',
-  description: 'NTE Build Score Calculator 開発基盤',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'NTE Build Score Calculator | 非公式ファンツール',
+    template: '%s | NTE Build Score Calculator',
+  },
+  description:
+    'Neverness to Everness（NTE）のビルドスコア計算を支援する非公式ファンツールです。OCRは入力補助であり、最終確認は利用者が行ってください。',
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: 'NTE Build Score Calculator | 非公式ファンツール',
+    description:
+      'Neverness to Everness（NTE）のビルドスコア計算を支援する非公式ファンツールです。OCRは入力補助であり、最終確認は利用者が行ってください。',
+    type: 'website',
+    url: '/',
+    siteName: 'NTE Build Score Calculator',
+    locale: 'ja_JP',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'NTE Build Score Calculator | 非公式ファンツール',
+    description:
+      'NTEのビルドスコア計算を支援する非公式ファンツール。OCRは入力補助で、最終確認は利用者が行ってください。',
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
