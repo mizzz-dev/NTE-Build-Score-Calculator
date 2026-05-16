@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-16（PR #144 merge後処理 / Issue #145 作成反映）
+最終更新: 2026-05-16（Issue #145 sitemap方針確定・実装反映）
 
 ## 1. 現在の実装状態
 
@@ -33,18 +33,19 @@ Issue #143 / PR #144 で canonical をページ別方針に見直し、公開前
 
 ## 4. 現在の次作業（Issue #145）
 
-Issue #145 で sitemap実装要否を確定し、必要なら `src/app/sitemap.ts` を追加します。
+Issue #145 で sitemap実装要否を確定し、`src/app/sitemap.ts` を追加しました。
 
 目的:
-- `robots.ts` の `sitemap.xml` 参照とsitemap本体の有無を整合させる。
-- 公開対象ページを棚卸しし、sitemapが必要か判断する。
-- 実装する場合はNext.jsの `MetadataRoute.Sitemap` を使い、必要最小限のsitemapを追加する。
-- 公式素材・ゲーム画像を使わない方針を維持する。
-- `NEXT_PUBLIC_SITE_URL` とfallback URL方針を既存metadata/robots方針と揃える。
+- `robots.ts` の `sitemap.xml` 参照とsitemap本体の有無を整合させた。
+- 公開対象ページを棚卸しし、公開対象のみを `sitemap.ts` に反映した。
+- `MetadataRoute.Sitemap` で必要最小限のsitemapを実装した。
+- `NEXT_PUBLIC_ROBOTS_NOINDEX=true` 時は sitemap を空配列で返し、公開前noindex方針と整合させた。
+- 公式素材・ゲーム画像を使わない方針を維持した。
+- `NEXT_PUBLIC_SITE_URL` とfallback URL方針を既存metadata/robots方針と揃えた。
 
 ## 5. 進行中 / 次フェーズ
 
-- 進行中: Issue #145（sitemap実装要否の確定と必要時のsitemap.ts追加）
+- 完了: Issue #145（sitemap実装要否確定とsitemap.ts追加）
 - 次候補:
   1. 商用利用前の権利・法務確認（要確認）
   2. 正式リリース準備・リリースノート作成
