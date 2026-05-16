@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-16（PR #142 merge後処理 / Issue #143 作成反映）
+最終更新: 2026-05-16（Issue #143 canonical/noindex修正対応）
 
 ## 1. 現在の実装状態
 
@@ -34,9 +34,9 @@ PR #142 のCodex Reviewで以下のP1指摘があり、次Issue #143で対応し
 - root layout のcanonical指定により、個別ページもホームcanonicalとして扱われる可能性がある。
 - 公開前index抑制フラグがrobots側のみのため、metadata側にも明示的なnoindex指示が必要。
 
-## 4. 現在の次作業（Issue #143）
+## 4. 直近完了タスク（Issue #143）
 
-Issue #143 で canonical をページ別方針に見直し、公開前noindexをmetadataにも反映します。
+Issue #143 で canonical をページ別方針に見直し、公開前noindexをmetadataにも反映しました。
 
 目的:
 - root layoutが全ページへホームcanonicalを強制しないよう修正する。
@@ -47,7 +47,7 @@ Issue #143 で canonical をページ別方針に見直し、公開前noindexを
 
 ## 5. 進行中 / 次フェーズ
 
-- 進行中: Issue #143（canonicalページ別方針見直し / metadata noindex反映）
+- 完了: Issue #143（canonicalページ別方針見直し / metadata noindex反映）
 - 次候補:
   1. sitemap実装要否の確定と必要時の別Issue化
   2. 商用利用前の権利・法務確認（要確認）

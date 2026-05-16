@@ -3,6 +3,9 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'プライバシー方針 | NTE Build Score Calculator',
   description: 'NTE Build Score Calculator のプライバシー方針（要確認事項を含む）',
+  alternates: {
+    canonical: '/privacy',
+  },
 };
 
 export default function PrivacyPage() {
