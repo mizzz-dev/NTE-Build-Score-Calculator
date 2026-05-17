@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-16（PR #144 merge後処理 / Issue #145 作成反映）
+最終更新: 2026-05-17（Issue #145 sitemap方針確定と実装反映）
 
 ## 1. 現在の実装状態
 
@@ -31,20 +31,20 @@ Issue #143 / PR #144 で canonical をページ別方針に見直し、公開前
 - `robots.ts` の既存方針とmetadata側のrobots指示を同一環境変数で整合。
 - 公式素材・ゲーム画像は追加せず、法務判断は引き続き「要確認」として維持。
 
-## 4. 現在の次作業（Issue #145）
+## 4. 直近完了タスク（Issue #145）
 
-Issue #145 で sitemap実装要否を確定し、必要なら `src/app/sitemap.ts` を追加します。
+Issue #145 で sitemap実装要否を確定し、`src/app/sitemap.ts` を追加しました。
 
-目的:
-- `robots.ts` の `sitemap.xml` 参照とsitemap本体の有無を整合させる。
-- 公開対象ページを棚卸しし、sitemapが必要か判断する。
-- 実装する場合はNext.jsの `MetadataRoute.Sitemap` を使い、必要最小限のsitemapを追加する。
-- 公式素材・ゲーム画像を使わない方針を維持する。
-- `NEXT_PUBLIC_SITE_URL` とfallback URL方針を既存metadata/robots方針と揃える。
+実施内容:
+- `src/app` 配下の公開対象ページを棚卸しし、公開対象を静的ページ・主要機能ページへ限定。
+- `MetadataRoute.Sitemap` で最小構成の `src/app/sitemap.ts` を追加。
+- `NEXT_PUBLIC_SITE_URL` と fallback URL（`https://nte-build-score-calculator.vercel.app`）を `layout.tsx` / `robots.ts` と同一方針で統一。
+- `NEXT_PUBLIC_ROBOTS_NOINDEX=true` 時は sitemap を空配列として返し、公開前noindex運用と整合。
+- `robots.ts` の `sitemap.xml` 参照と sitemap 本体の実装有無を整合。
 
 ## 5. 進行中 / 次フェーズ
 
-- 進行中: Issue #145（sitemap実装要否の確定と必要時のsitemap.ts追加）
+- 進行中: なし（Issue #145は実装完了、レビュー待ち）
 - 次候補:
   1. 商用利用前の権利・法務確認（要確認）
   2. 正式リリース準備・リリースノート作成
