@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-18（PR #157 merge後処理 / Issue #158 作成反映）
+最終更新: 2026-05-18（Issue #158 判定・deploy計画反映）
 
 ## 1. 現在の実装状態
 
@@ -40,9 +40,9 @@ Issue #156 / PR #157 で主要機能ページのmetadata title重複を解消し
 - 各ページの `alternates.canonical` は維持。
 - docs/current-status.md、docs/active-issues.md、docs/logs、docs/ai-promptsを更新済み。
 
-## 4. 現在の次作業（Issue #158）
+## 4. 直近完了タスク（Issue #158）
 
-Issue #158 で正式リリース実施可否と本番deploy手順を確定します。
+Issue #158 で正式リリース実施可否と本番deploy手順を確定しました。
 
 目的:
 - Issue #152 のGo（条件付き）判定がIssue #154 / #156対応後も有効か確認する。
@@ -53,9 +53,9 @@ Issue #158 で正式リリース実施可否と本番deploy手順を確定しま
 
 ## 5. 進行中 / 次フェーズ
 
-- 進行中: Issue #158（正式リリース実施可否と本番deploy手順確定）
+- 完了: Issue #158（正式リリース実施可否判定 / deploy手順 / rollback条件 / post-releaseログ定義）
 - 次候補:
-  1. 本番deploy手順の実施または別Issue化
+  1. 本番deploy実施Issueの新規起票と実施
   2. post-release確認ログ作成
   3. 商用化前の専門確認（名称・素材・免責文言・収益化導線）
   4. rollback運用監査
