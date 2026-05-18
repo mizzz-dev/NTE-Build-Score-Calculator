@@ -1,21 +1,21 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-18（Issue #162 No-Go解除条件再確認反映）
+最終更新: 2026-05-18（PR #163 merge後処理 / Issue #164 作成反映）
 
 ## 1. 現在Open Issue
 
-- #162: 正式リリースNo-Go解除条件確認 / 公開実行可否再判定（open, 再判定結果: No-Go継続）
+- #164: 正式リリースGo承認と本番公開条件の証跡保存（open）
+- #162: 正式リリースNo-Go解除条件確認 / 公開実行可否再判定（完了: No-Go継続）
 - #160: 正式リリース公開実施と公開後確認ログ保存（完了: No-Go記録済み / deploy未実施）
 - #158: 正式リリース実施可否と本番deploy手順確定（完了: Conditional Go判定と手順文書化）
 - #156: 主要機能ページmetadata title重複解消（完了）
 - #154: 主要機能ページのcanonical方針整合（完了）
-- #152: 本番URL・環境変数・Go/No-Go判定（完了: Go条件付き）
 
 > 要確認: GitHub上のOpen Issueは変動するため、着手時に必ず最新一覧を同期すること。
 
 ## 2. 次にやるべきIssue候補
 
-1. #162: 正式リリースNo-Go解除条件確認 / 公開実行可否再判定（P1）
+1. #164: 正式リリースGo承認と本番公開条件の証跡保存（P1）
 2. 人間最終Go承認の記録（P1）
 3. 実環境証跡の保存（P1）
 4. deploy実施ログ保存（P1）
@@ -25,18 +25,19 @@
 
 ## 3. 優先順位（暫定）
 
-- P1: #162 No-Go解除条件の再確認（実施済み、未充足項目の解消待ち）
-- P1: #162 人間最終Go承認の有無確認
-- P1: #162 本番環境変数実環境証跡の有無確認
-- P1: #162 deploy実行ログURL記録可否の確認
+- P1: #164 人間最終Go承認の有無確認
+- P1: #164 本番公開URLの実環境証跡保存可否確認
+- P1: #164 検索公開設定の実環境証跡保存可否確認
+- P1: #164 deploy実行ログURL保存可否確認
 - P1: 商用化前の専門確認（要確認維持）
 - P2: rollback運用監査
 
 ## 4. Blocker
 
-- Issue #160 / PR #161 は完了済み。
-- Issue #160では、人間の最終Go承認、本番環境変数実値、deploy実行ログURLがRepository上に未記録だったためNo-Goとして記録済み。
-- Issue #162でNo-Go解除条件を再確認した結果、未充足のためNo-Go継続を記録済み。
+- Issue #162 / PR #163 は完了済み。
+- Issue #162ではNo-Go解除条件を再確認し、未充足のためNo-Go継続を記録済み。
+- 未充足項目は、人間最終Go承認、本番公開URLの実環境証跡、検索公開設定の実環境証跡、deploy実行者・対象コミット・実行ログURL。
+- 次はIssue #164で、承認・証跡の保存可否を確認し、Go前提充足またはNo-Go継続を判定する。
 - 法務判断の確定は引き続き対象外（要確認）。
 - 公式素材・ゲーム画像は追加しない。
 - OCRアルゴリズム、OCR信頼度計算、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は引き続き変更しない。
@@ -44,9 +45,10 @@
 ## 5. Handoff情報
 
 - まず `docs/current-status.md` と `docs/ai-protocol/PROMPT.txt` を読む。
+- Issue #162のNo-Go継続記録は `docs/logs/2026-05-18-issue-162-no-go-recheck.md` を参照。
 - Issue #160のNo-Go記録は `docs/logs/2026-05-18-issue-160-post-release-check.md` を参照。
 - Issue #158 判定と公開手順は `docs/reports/2026-05-18-issue-158-official-release-go-no-go-and-deploy-plan.md` を参照。
-- Issue #162では、人間Go承認、環境変数証跡、deploy実行ログURLの有無を推測せず確認する。
+- Issue #164では、人間Go承認、公開条件証跡、deploy実行ログURLの有無を推測せず確認する。
 - 公開しない場合はNo-Go継続理由と再開条件を記録する。
 - 公式素材・ゲーム画像は追加しない。
 - 評価画像や個人情報をRepositoryへ保存しない。
