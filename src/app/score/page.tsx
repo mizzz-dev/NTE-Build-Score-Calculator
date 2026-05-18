@@ -4,7 +4,7 @@ import { NeonPanel } from '@/components/ui/NeonPanel';
 import { ScorePageContainer } from '@/features/score/components/ScorePageContainer';
 
 export const metadata: Metadata = {
-  title: 'スコア計算 | NTE Build Score Calculator',
+  title: 'スコア計算',
   description: 'NTEビルドのスコア計算を行う非公式ファンツールのメイン画面です。',
   alternates: {
     canonical: '/score',
