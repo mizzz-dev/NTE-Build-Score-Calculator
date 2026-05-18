@@ -1,10 +1,10 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-18（PR #149 merge後処理 / Issue #150 作成反映）
+最終更新: 2026-05-18（Issue #150 ドキュメント作成反映）
 
 ## 1. 現在Open Issue
 
-- #150: 正式リリース準備・リリースノート・公開前チェックリスト作成（open）
+- #150: 正式リリース準備・リリースノート・公開前チェックリスト作成（対応済み・最終確認待ち）
 - #148: 商用利用前の権利・法務確認観点整理（完了）
 - #145: sitemap実装要否の確定と必要時のsitemap.ts追加（完了）
 - #143: canonicalページ別方針見直し / metadata noindex反映（完了）
@@ -23,16 +23,16 @@
 
 ## 3. 優先順位（暫定）
 
-- P1: #150 正式リリース準備・リリースノート・公開前チェックリスト作成
-- P1: secretや環境変数が公開されていないことの継続監査
 - P1: 本番URL / `NEXT_PUBLIC_SITE_URL` / `NEXT_PUBLIC_ROBOTS_NOINDEX` の最終確認
+- P1: secretや環境変数が公開されていないことの継続監査
+- P1: リリースチェックリストに基づくGo / No-Go判定準備
 - P2: 正式リリース実施判断
 - P2: 商用化前の専門確認
 
 ## 4. Blocker
 
 - Issue #148 / PR #149 は完了済み。
-- 次はIssue #150で、正式リリース前チェックリスト、リリースノート、rollback手順、post-release確認をRepositoryに残す。
+- Issue #150で、正式リリース前チェックリスト・リリースノート・rollback/post-release確認項目をRepositoryへ反映済み。
 - 法務判断の確定は引き続き対象外（要確認）。
 - 公式素材・ゲーム画像は追加しない。
 - OCRアルゴリズム、OCR信頼度計算、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は引き続き変更しない。
