@@ -1,10 +1,10 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-20（PR #170 merge後処理 / Issue #171 作成反映）
+最終更新: 2026-05-20（Issue #171 判定ログ反映）
 
 ## 1. 現在Open Issue
 
-- #171: 人間最終Go承認と本番公開条件証跡の提出（open）
+- #171: 人間最終Go承認と本番公開条件証跡の提出（open / 最新判定: No-Go継続）
 - #169: 承認・証跡提出テンプレートのdeploy前後条件分離（完了: deploy前Go判定条件とdeploy後確認項目を分離済み）
 - #166: 正式リリース承認・公開条件証跡の提出テンプレート作成（完了: テンプレート保存済み）
 - #164: 正式リリースGo承認と本番公開条件の証跡保存（完了: No-Go継続）
@@ -39,6 +39,8 @@
 - Issue #169でdeploy前Go判定条件とdeploy後確認項目は分離済み。
 - 次はIssue #171で、人間最終Go承認、本番公開URL一致証跡、検索公開設定証跡、rollback参照コミット / rollback方針を保存する。
 - deploy実行ログURLは公開実行後確認項目として扱い、公開実行前Go判定条件には含めない。
+- Issue #171 判定ログ（`docs/logs/2026-05-20-issue-171-human-go-approval-and-prod-evidence.md`）でNo-Go継続を記録済み。
+- 不足項目: 人間最終Go承認、本番公開URL一致証跡、検索公開設定証跡、rollback要否の人間判定記録。
 - 法務判断の確定は引き続き対象外（要確認）。
 - 公式素材・ゲーム画像は追加しない。
 - OCRアルゴリズム、OCR信頼度計算、DB、auth、infra、deployment、保存payload仕様、ランキング仕様は引き続き変更しない。
