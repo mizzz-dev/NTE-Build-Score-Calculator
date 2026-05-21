@@ -1,10 +1,10 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-20（PR #172 merge後処理 / Issue #173 作成反映）
+最終更新: 2026-05-21（Issue #173 フォローアップ反映）
 
 ## 1. 現在Open Issue
 
-- #173: 人間対応：公開実行前Go承認と本番公開条件証跡の提出（open）
+- #173: 人間対応：公開実行前Go承認と本番公開条件証跡の提出（open / 2026-05-21フォローアップ: No-Go継続）
 - #171: 人間最終Go承認と本番公開条件証跡の提出（完了: No-Go継続）
 - #169: 承認・証跡提出テンプレートのdeploy前後条件分離（完了: deploy前Go判定条件とdeploy後確認項目を分離済み）
 - #166: 正式リリース承認・公開条件証跡の提出テンプレート作成（完了: テンプレート保存済み）
@@ -37,6 +37,7 @@
 
 - Issue #171 / PR #172 は完了済み。
 - Issue #171判定ログでNo-Go継続を記録済み。
+- Issue #173フォローアップ（2026-05-21）でも、4条件未提出のためNo-Go継続を記録済み。
 - 不足項目は、人間最終Go承認、本番公開URL一致証跡、検索公開設定証跡、rollback要否の人間判定記録。
 - 次はIssue #173で、人間担当者が必要な承認・証跡を提出する。
 - deploy実行ログURLは公開実行後確認項目として扱い、公開実行前Go判定条件には含めない。
@@ -48,6 +49,7 @@
 
 - まず `docs/current-status.md` と `docs/ai-protocol/PROMPT.txt` を読む。
 - Issue #171判定ログは `docs/logs/2026-05-20-issue-171-human-go-approval-and-prod-evidence.md` を参照。
+- Issue #173フォローアップログは `docs/logs/2026-05-21-issue-173-human-go-approval-and-prod-evidence-followup.md` を参照。
 - 提出テンプレートは `docs/runbooks/official-release-approval-and-evidence-submission-template.md` を参照。
 - Issue #158 判定と公開手順は `docs/reports/2026-05-18-issue-158-official-release-go-no-go-and-deploy-plan.md` を参照。
 - Issue #173では、人間Go承認と実環境証跡を推測せず、人間担当者が明示した記録のみを扱う。
