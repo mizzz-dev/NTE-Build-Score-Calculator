@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-21（PR #174 merge後処理 / Issue #175 作成反映）
+最終更新: 2026-05-21（Issue #175 本番deploy準備手順整理 反映）
 
 ## 1. 現在の実装状態
 
@@ -53,7 +53,24 @@ Issue #173 / PR #174 で公開実行前Go判定フォローアップを記録し
 - 作業ログ: `docs/logs/2026-05-21-issue-173-human-go-approval-and-prod-evidence-followup.md`
 - AIプロンプトログ: `docs/ai-prompts/2026-05-21-issue-173-human-go-approval-and-prod-evidence-followup.md`
 
-## 4. 現在の次作業（Issue #175）
+## 4. 直近完了タスク（Issue #175）
+
+Issue #175 で本番deploy準備と公開実行手順を文書化し、公開実行前Go承認の前段条件を再整理しました。
+
+- deploy対象環境を Production（Vercel本番）と明確化
+- deploy対象ブランチを `main`、対象コミットを「公開実行時点の `main` HEAD SHA（人間記録必須）」と明確化
+- deploy実施者 / 実施責任者 / 記録責任者を役割単位で明確化
+- deploy前確認項目とdeploy後確認項目を分離
+- rollback参照コミット `e5220c18704ca0185ad257b2f72c4c3809a60648` とrollback方針を再確認
+- 非公開情報をRepositoryへ保存しないルールを明記
+- Issue #158 の公開手順との整合を確認
+
+保存先:
+- Runbook: `docs/runbooks/issue-175-production-deploy-preparation-and-execution-plan.md`
+- 作業ログ: `docs/logs/2026-05-21-issue-175-production-deploy-preparation-and-execution-plan.md`
+- AIプロンプトログ: `docs/ai-prompts/2026-05-21-issue-175-production-deploy-preparation-and-execution-plan.md`
+
+## 5. 現在の次作業（Issue #175）
 
 Issue #175 で本番deploy準備と公開実行手順を確定します。
 
@@ -66,7 +83,7 @@ Issue #175 で本番deploy準備と公開実行手順を確定します。
 - rollback参照コミットとrollback方針を確認する。
 - 非公開情報をRepositoryへ保存しないルールを明記する。
 
-## 5. 進行中 / 次フェーズ
+## 6. 進行中 / 次フェーズ
 
 - 進行中: Issue #175（本番deploy準備と公開実行手順の確定）
 - 次候補:
@@ -78,7 +95,7 @@ Issue #175 で本番deploy準備と公開実行手順を確定します。
   6. 商用化前の専門確認（名称・素材・免責文言・収益化導線）
   7. rollback運用監査
 
-## 6. 注意すべき変更禁止領域
+## 7. 注意すべき変更禁止領域
 
 本フェーズでは以下を変更しない。
 
@@ -96,7 +113,7 @@ Issue #175 で本番deploy準備と公開実行手順を確定します。
 - 公式素材・ゲーム画像の追加
 - 非公開情報の保存
 
-## 7. 参照ドキュメント
+## 8. 参照ドキュメント
 
 - `docs/ai-protocol/PROMPT.txt`
 - `docs/runbooks/official-release-approval-and-evidence-submission-template.md`（Issue #169反映版）
