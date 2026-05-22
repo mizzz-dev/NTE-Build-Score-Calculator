@@ -1,17 +1,17 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-21（PR #176 merge後処理 / Issue #177 作成反映）
+最終更新: 2026-05-22（PR #178 merge後処理 / Issue #179 作成反映）
 
 ## 1. 現在Open Issue
 
-- #177: 公開実行Issue起票と人間承認フロー開始条件の明確化（open）
+- #179: 公開実行Issue作成と人間Go承認待ち状態の整備（open）
 
 > 要確認: GitHub上のOpen Issueは変動するため、着手時に必ず最新一覧を同期すること。
 
 ## 2. 次にやるべきIssue候補
 
-1. #177: 公開実行Issue起票と人間承認フロー開始条件の明確化（P1）
-2. 条件充足時の公開実行Issue作成（P1）
+1. #179: 公開実行Issue作成と人間Go承認待ち状態の整備（P1）
+2. 条件充足時のdeploy実行（P1）
 3. deploy実施ログ保存（P1）
 4. post-release実測結果への更新（P1）
 5. 商用化前の専門確認（名称・素材・免責文言・収益化導線）（P1）
@@ -19,20 +19,20 @@
 
 ## 3. 優先順位（暫定）
 
-- P1: #177 公開実行Issueに必要な記録項目の明確化
-- P1: #177 人間承認フロー開始条件の明確化
-- P1: #177 deploy前確認項目とdeploy後確認項目の分離
-- P1: #177 Issue #175完了後ステータスと次作業記述の同期（本対応で反映）
-- P1: #177 公開実行Issueテンプレート整備（本対応で反映）
+- P1: #179 公開実行Issueの起票
+- P1: #179 人間Go承認待ち状態の明確化
+- P1: #179 未充足項目を `未確認` として明記
+- P1: #179 deploy前確認項目とdeploy後確認項目の分離
 - P1: 商用化前の専門確認（要確認維持）
 - P2: rollback運用監査
 
 ## 4. Blocker
 
-- Issue #175 / PR #176 は完了済み（Open Issueではない）。
-- Issue #175で、本番deploy準備と公開実行手順の整理は完了済み。
-- PR #176レビューで、`docs/current-status.md` のIssue #175完了後ステータスと次作業記述が混在している点が指摘済み。
-- 次はIssue #177で、公開実行Issue起票条件と人間承認フロー開始条件を整理し、ステータス文書の状態同期を行う。
+- Issue #177 / PR #178 は完了済み。
+- Issue #177で、公開実行Issueテンプレートと人間承認フロー開始条件は整理済み。
+- 次はIssue #179で、テンプレートを使って実際の公開実行Issueを起票し、人間Go承認待ち状態をRepository上で明確化する。
+- Go承認前にdeploy実行へ進めない。
+- 人間Go承認や本番公開条件証跡を推測で補完しない。
 - deploy実行ログURLは公開実行後確認項目として扱い、公開実行前Go判定条件には含めない。
 - 法務判断の確定は引き続き対象外（要確認）。
 - 公式素材・ゲーム画像は追加しない。
@@ -41,11 +41,11 @@
 ## 5. Handoff情報
 
 - まず `docs/current-status.md` と `docs/ai-protocol/PROMPT.txt` を読む。
+- 公開実行Issueテンプレートは `docs/runbooks/issue-177-official-release-execution-issue-template.md` を参照。
 - Issue #175 Runbookは `docs/runbooks/issue-175-production-deploy-preparation-and-execution-plan.md` を参照。
-- Issue #175作業ログは `docs/logs/2026-05-21-issue-175-production-deploy-preparation-and-execution-plan.md` を参照。
 - 提出テンプレートは `docs/runbooks/official-release-approval-and-evidence-submission-template.md` を参照。
 - Issue #158 判定と公開手順は `docs/reports/2026-05-18-issue-158-official-release-go-no-go-and-deploy-plan.md` を参照。
-- Issue #177では、実際の本番deployや本番設定変更は行わず、公開実行Issue起票条件と人間承認フロー開始条件を整理する。
+- Issue #179では、実際の本番deployや本番設定変更は行わず、公開実行Issueの起票と人間Go承認待ち状態を整える。
 - 非公開情報をRepositoryへ保存しない。
 - 公式素材・ゲーム画像は追加しない。
 - 評価画像や個人情報をRepositoryへ保存しない。
