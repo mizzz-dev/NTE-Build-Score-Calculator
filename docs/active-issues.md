@@ -1,10 +1,10 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-22（PR #178 merge後処理 / Issue #179 作成反映）
+最終更新: 2026-05-22（Issue #179 公開実行Issue起票・人間Go承認待ち反映）
 
 ## 1. 現在Open Issue
 
-- #179: 公開実行Issue作成と人間Go承認待ち状態の整備（open）
+- #179: 公開実行Issue作成と人間Go承認待ち状態の整備（open / 起票済み・Go承認待ち）
 
 > 要確認: GitHub上のOpen Issueは変動するため、着手時に必ず最新一覧を同期すること。
 
@@ -49,3 +49,10 @@
 - 非公開情報をRepositoryへ保存しない。
 - 公式素材・ゲーム画像は追加しない。
 - 評価画像や個人情報をRepositoryへ保存しない。
+
+
+## 6. Issue #179 現在状態（2026-05-22 UTC）
+
+- 公開実行Issue記録: `docs/runbooks/issue-179-official-release-execution-issue.md`
+- 判定: `No-Go継続（人間Go承認待ち）`
+- 未確認（人間入力待ち）: Go承認者/時刻/根拠URL、本番URL一致証跡、`NEXT_PUBLIC_ROBOTS_NOINDEX=false` 証跡、rollback要否判定
