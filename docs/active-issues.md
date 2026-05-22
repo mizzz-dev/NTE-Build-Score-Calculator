@@ -1,10 +1,10 @@
 # Active Issues（Context Bootstrap）
 
-最終更新: 2026-05-22（PR #180 merge後処理 / Issue #181 作成反映）
+最終更新: 2026-05-22（Issue #181 Pre-deploy証跡受領確認反映）
 
 ## 1. 現在Open Issue
 
-- #181: 公開実行前Go承認とPre-deploy証跡提出（open / 人間対応待ち）
+- #181: 公開実行前Go承認とPre-deploy証跡提出（open / 証跡未提出のためNo-Go継続）
 
 > 要確認: GitHub上のOpen Issueは変動するため、着手時に必ず最新一覧を同期すること。
 
@@ -32,7 +32,7 @@
 
 - Issue #179 / PR #180 は完了済み。
 - Issue #179で、公開実行Issue記録を作成し、人間Go承認待ち状態を明確化済み。
-- 現在はIssue #181で、人間担当者がPre-deploy必須証跡を提出する段階。
+- 現在はIssue #181で、Pre-deploy必須証跡の受領確認を実施したが、必須証跡は未提出。
 - Go承認前にdeploy実行へ進めない。
 - 人間Go承認や本番公開条件証跡を推測で補完しない。
 - deploy実行ログURLは公開実行後確認項目として扱い、公開実行前Go判定条件には含めない。
