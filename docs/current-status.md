@@ -1,6 +1,6 @@
 # 現在ステータス（Context Bootstrap）
 
-最終更新: 2026-05-22（PR #178 merge後処理 / Issue #179 作成反映）
+最終更新: 2026-05-22（Issue #179 公開実行Issue起票・人間Go承認待ち反映）
 
 ## 1. 現在の実装状態
 
@@ -56,7 +56,7 @@ Issue #177 / PR #178 で公開実行Issueテンプレートを整備し、人間
 
 ## 4. 現在の次作業（Issue #179）
 
-Issue #179 で、整備済みテンプレートを使って実際の公開実行Issueを起票し、人間Go承認待ち状態をRepository上で明確化します。
+Issue #179 で、整備済みテンプレートを使った公開実行Issueを `docs/runbooks/issue-179-official-release-execution-issue.md` として起票し、人間Go承認待ち状態をRepository上で明確化しました。
 
 目的:
 - `docs/runbooks/issue-177-official-release-execution-issue-template.md` を元に公開実行Issueを起票する。
@@ -68,7 +68,7 @@ Issue #179 で、整備済みテンプレートを使って実際の公開実行
 
 ## 5. 進行中 / 次フェーズ
 
-- 進行中: Issue #179（公開実行Issue起票と人間Go承認待ち状態の整備）
+- 進行中: Issue #179（公開実行Issue起票済み / 人間Go承認待ち）
 - 次候補:
   1. 公開実行Issueの起票
   2. 人間Go承認待ち状態の明確化
@@ -107,3 +107,14 @@ Issue #179 で、整備済みテンプレートを使って実際の公開実行
 - `docs/reports/2026-05-18-issue-158-official-release-go-no-go-and-deploy-plan.md`
 - `docs/risks/risks.md`
 - `docs/active-issues.md`
+
+
+## 8. Issue #179 進捗記録（2026-05-22 UTC）
+
+- 公開実行Issueを作成: `docs/runbooks/issue-179-official-release-execution-issue.md`
+- 状態: `No-Go継続（人間Go承認待ち）`
+- 明記済み事項:
+  - Go承認前にdeploy実行へ進めない
+  - Pre-deploy / Post-deploy チェック分離
+  - 未充足項目を `未確認` で明記
+  - 人間入力欄とAI推測補完禁止ルール
