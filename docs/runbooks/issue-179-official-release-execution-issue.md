@@ -2,8 +2,9 @@
 
 - 初版作成日: 2026-05-22 (UTC)
 - 判定構造更新日: 2026-07-22 (JST)
-- 関連Issue: #179 / #187
-- 現在ステータス: `Gate A: Deploy-Go判定待ち（本番未deploy）`
+- 証跡同期日: 2026-07-23 (JST)
+- 関連Issue: #179 / #187 / #189
+- 現在ステータス: `Gate A: Deploy-No-Go（機械確認済み証跡あり / 人間確認・承認待ち）`
 - 目的: 初回本番deployを許可する判定と、deploy後に公開を継続する判定を分離し、未deployでは取得できない証跡による循環待ちを防止する。
 - 注意: 本ドキュメント更新では、実際の本番deploy、本番設定変更、secret操作は行わない。
 
@@ -29,7 +30,10 @@
 - 対象リポジトリ: `mizzz-dev/NTE-Build-Score-Calculator`
 - deploy対象環境: `Production（Vercel本番）`
 - deploy対象ブランチ: `main`
+- deploy対象コミット候補: `676eb4babbf456c272e7608843acd23489bd9a2e`
 - 想定本番URL: `https://nte-build-score-calculator.vercel.app`
+- Netlify確認: 接続済みアカウントで`NTE`に一致するProjectは未確認
+- ホスティング方針: Issue #189ではVercelからNetlifyへの移行を行わない
 - 参照Runbook:
   - `docs/runbooks/issue-175-production-deploy-preparation-and-execution-plan.md`
   - `docs/reports/2026-05-18-issue-158-official-release-go-no-go-and-deploy-plan.md`
@@ -45,12 +49,12 @@
 
 以下がすべて確認済みになるまで、初回本番deployへ進めない。
 
-- [ ] deploy対象ブランチが`main`である。
+- [x] deploy対象ブランチが`main`である。
 - [ ] deploy対象コミットSHA、記録時刻、記録者が確定している。
 - [ ] `CI` / `pnpm lint` / `pnpm test` / `pnpm build`の結果、または実行不能理由が記録されている。
 - [ ] deploy実施者 / 実施責任者 / 記録責任者が確定している。
 - [ ] 本番環境変数が設定済みであることを、権限を持つ人間が確認している。
-- [ ] 環境変数値、secret、非公開管理画面情報をRepositoryへ保存していない。
+- [x] 環境変数値、secret、非公開管理画面情報をRepositoryへ保存していない。
 - [ ] rollback参照コミットとrollback手順が確認されている。
 - [ ] deploy後確認担当者と確認期限が確定している。
 - [ ] 初回本番deployを実施してよいという人間のDeploy-Go承認が記録されている。
@@ -67,12 +71,31 @@
 - 主要導線の本番動作確認
 - deploy実行ログURL
 
-### 2.3 Gate A記録欄（人間入力）
+### 2.3 Gate A機械確認済み証跡（Issue #189）
 
-- deploy対象コミットSHA: `未確認`
+- Issue #187: `closed / completed`
+- PR #188: `merged`
+- deploy対象ブランチ候補: `main`
+- deploy対象コミット候補: `676eb4babbf456c272e7608843acd23489bd9a2e`
+- PR #188 head: `decd83ac87e1f5640980d1cbffa3ec6472fd3c54`
+- PR #188 headのGitHub Actions:
+  - `CI`: success（run id: `29897092827`）
+  - `app-quality`: success（run id: `29897092778`）
+  - `docs-validation`: success（run id: `29897092842`）
+- 確認方法: GitHub ConnectorによるRepository一次情報確認
+- 記録時刻: `2026-07-22T23:44Z`頃
+
+証跡の扱い:
+- PR headのWorkflow成功と、deploy対象候補である`main` merge commitの品質結果は区別する。
+- PR headの成功をmerge commitの成功として推測補完しない。
+- deploy対象merge commitに対する最終品質証跡は、人間が確認してGate A記録欄へ保存する。
+
+### 2.4 Gate A記録欄（人間入力）
+
+- deploy対象コミットSHA: `676eb4babbf456c272e7608843acd23489bd9a2e`（候補 / 人間確定待ち）
 - deploy対象コミット記録時刻（UTC）: `未確認`
 - deploy対象コミット記録者: `未確認`
-- CI / lint / test / build確認結果: `未確認`
+- CI / lint / test / build確認結果: `PR #188 headは3 Workflow成功 / deploy対象merge commitは人間確認待ち`
 - deploy実施者: `未確認`
 - 実施責任者: `未確認`
 - 記録責任者: `未確認`
@@ -88,7 +111,7 @@
 - Deploy-Go承認根拠URL: `未確認`
 - Deploy-Go承認コメント: `未確認`
 
-### 2.4 Gate AでNo-Goとなる条件
+### 2.5 Gate AでNo-Goとなる条件
 
 以下のいずれかに該当する場合は`Deploy-No-Go`とする。
 
@@ -190,20 +213,26 @@
 
 - AIは未確認項目を推測で埋めない。
 - 人間承認、環境設定確認、deploy実行、rollback判断は人間のみが確定する。
+- PR headのWorkflow成功をdeploy対象merge commitの成功として扱わない。
 - Gate A通過をRelease-Go承認として扱わない。
 - Gate B完了前に正式リリース完了と記録しない。
 - deploy実行ログURLをGate Aの必須条件に戻さない。
 - OCRアルゴリズム、DB、auth、infra、deployment workflow、保存payload仕様を変更しない。
+- Issue #189ではVercelからNetlifyへの移行を行わない。
 
 ---
 
-## 7. 現時点の判定（Issue #187）
+## 7. 現時点の判定（Issue #189）
 
 - Gate A: `Deploy-No-Go`
 - Gate B: `未開始`
+- Gate Aで機械確認済み:
+  - deploy対象ブランチ候補は`main`
+  - deploy対象コミット候補は`676eb4babbf456c272e7608843acd23489bd9a2e`
+  - PR #188 headの`CI` / `app-quality` / `docs-validation`は成功
+  - secret・環境変数値・非公開管理画面情報は保存していない
 - Gate AがNo-Goの理由:
-  - deploy対象コミットSHAが未確定
-  - CI / lint / test / buildの最終記録が未確定
+  - deploy対象merge commitの最終品質証跡が未確認
   - deploy実施者 / 実施責任者 / 記録責任者が未確定
   - 本番環境変数設定済みの人間確認が未提出
   - rollback手順確認が未提出
@@ -218,4 +247,5 @@
 - Issue #169: deploy実行ログURLをdeploy後確認へ分離。
 - Issue #179: 公開実行Issue記録を作成。
 - Issue #181 / #183 / #185: 未deployでは取得不能な本番実測証跡がPre-deploy条件に残り、No-Go継続が反復。
-- Issue #187: Deploy-GoとRelease-Goを分離し、初回deploy前後の責任と証跡を再定義。
+- Issue #187 / PR #188: Deploy-GoとRelease-Goを分離し、初回deploy前後の責任と証跡を再定義。
+- Issue #189: PR #188マージ後のRepository一次情報をGate Aへ同期し、人間確認・承認待ち項目を明確化。
