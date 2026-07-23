@@ -1,0 +1,108 @@
+name: release-preflight
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target_sha:
+        description: '確認対象の40文字コミットSHA（未指定時は実行時のSHA）'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-preflight-${{ github.event.inputs.target_sha || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    name: Gate A quality preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_SHA: ${{ github.event.inputs.target_sha || github.sha }}
+    steps:
+      - name: 対象コミットSHAを検証
+        shell: bash
+        run: |
+          if [[ ! "$TARGET_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "対象コミットSHAは40文字の16進数で指定してください。" >&2
+            exit 1
+          fi
+
+      - name: 対象コミットをCheckout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          persist-credentials: false
+
+      - name: pnpmをセットアップ
+        uses: pnpm/action-setup@v4
+
+      - name: Node.jsをセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: 依存関係をインストール
+        id: install
+        continue-on-error: true
+        run: pnpm install --frozen-lockfile
+
+      - name: Lintを実行
+        id: lint
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: pnpm lint
+
+      - name: Testを実行
+        id: test
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: pnpm test
+
+      - name: Buildを実行
+        id: build
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: pnpm build
+
+      - name: Gate A品質確認結果をSummaryへ記録
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '## Gate A 品質確認結果'
+            echo
+            echo "- 対象コミットSHA: \`$TARGET_SHA\`"
+            echo "- 実行者: \`${{ github.actor }}\`"
+            echo "- 実行日時（UTC）: \`$(date -u +'%Y-%m-%dT%H:%M:%SZ')\`"
+            echo "- Workflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo
+            echo '| 確認項目 | 結果 |'
+            echo '| --- | --- |'
+            echo "| install | ${{ steps.install.outcome }} |"
+            echo "| lint | ${{ steps.lint.outcome }} |"
+            echo "| test | ${{ steps.test.outcome }} |"
+            echo "| build | ${{ steps.build.outcome }} |"
+            echo
+            echo '> このSummaryにはsecret・環境変数値・非公開管理画面情報を記録しません。'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Gate A品質確認の最終判定
+        if: always()
+        shell: bash
+        run: |
+          if [[ "${{ steps.install.outcome }}" != 'success' || \
+                "${{ steps.lint.outcome }}" != 'success' || \
+                "${{ steps.test.outcome }}" != 'success' || \
+                "${{ steps.build.outcome }}" != 'success' ]]; then
+            echo 'Gate A品質確認に失敗しました。Summaryと各Stepのログを確認してください。' >&2
+            exit 1
+          fi
+
+          echo 'Gate A品質確認はすべて成功しました。'
