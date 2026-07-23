@@ -1,0 +1,199 @@
+name: Gate A Deploy-Go判定
+description: 初回本番deploy前の人間確認とDeploy-Go判定を記録します
+title: "[Gate A] Deploy-Go判定: "
+labels:
+  - documentation
+  - codex
+assignees:
+  - mizzz-ivr
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Gate A: Deploy-Go
+
+        このIssue Formは、初回本番deployを実施してよいかを人間が判断するための記録です。
+
+        - Pull Requestのレビュー承認とは別の判定です。
+        - `Go`を選択しても正式公開完了ではありません。
+        - deploy後はGate Bで本番実測を確認し、公開継続またはrollbackを判断します。
+        - APIキー、トークン、パスワード、Cookie、環境変数値、非公開管理画面のスクリーンショットを記載しないでください。
+
+  - type: input
+    id: target_sha
+    attributes:
+      label: deploy対象コミットSHA
+      description: release-preflightで確認した40文字の完全なコミットSHAを入力してください。
+      placeholder: "0123456789abcdef0123456789abcdef01234567"
+    validations:
+      required: true
+
+  - type: input
+    id: preflight_run_url
+    attributes:
+      label: release-preflight Workflow Run URL
+      description: 対象コミットに対して成功したrelease-preflightの公開可能なRun URLを入力してください。
+      placeholder: "https://github.com/mizzz-ivr/NTE-Build-Score-Calculator/actions/runs/123456789"
+    validations:
+      required: true
+
+  - type: input
+    id: preflight_verified_at
+    attributes:
+      label: 品質確認時刻（UTC）
+      description: ISO 8601形式で入力してください。
+      placeholder: "2026-07-23T09:30:00Z"
+    validations:
+      required: true
+
+  - type: input
+    id: preflight_verifier
+    attributes:
+      label: 品質確認者
+      description: release-preflightの対象SHAと結果を確認した担当者を入力してください。
+      placeholder: GitHubユーザー名または公開可能な担当者名
+    validations:
+      required: true
+
+  - type: input
+    id: deploy_operator
+    attributes:
+      label: deploy実施者
+      description: 本番deployの操作を行う担当者を入力してください。
+      placeholder: GitHubユーザー名または公開可能な担当者名
+    validations:
+      required: true
+
+  - type: input
+    id: release_owner
+    attributes:
+      label: 実施責任者
+      description: 初回本番deployの実施判断と進行に責任を持つ担当者を入力してください。
+      placeholder: GitHubユーザー名または公開可能な担当者名
+    validations:
+      required: true
+
+  - type: input
+    id: evidence_recorder
+    attributes:
+      label: 記録責任者
+      description: deployログとGate B結果をRepositoryへ記録する担当者を入力してください。
+      placeholder: GitHubユーザー名または公開可能な担当者名
+    validations:
+      required: true
+
+  - type: input
+    id: env_confirmer
+    attributes:
+      label: 本番環境変数設定済み確認者
+      description: 値を記載せず、必要な本番環境変数が設定済みであることを確認した担当者を入力してください。
+      placeholder: GitHubユーザー名または公開可能な担当者名
+    validations:
+      required: true
+
+  - type: input
+    id: env_confirmed_at
+    attributes:
+      label: 本番環境変数確認時刻（UTC）
+      description: 環境変数値ではなく、設定済み確認を行った時刻だけを入力してください。
+      placeholder: "2026-07-23T09:30:00Z"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: secret_safety
+    attributes:
+      label: 機密情報の記録禁止確認
+      options:
+        - label: このIssueにAPIキー、トークン、パスワード、Cookie、環境変数値、非公開管理画面情報を記載していません。
+          required: true
+
+  - type: input
+    id: rollback_sha
+    attributes:
+      label: rollback参照コミットSHA
+      description: 問題発生時に戻す候補の40文字コミットSHAを入力してください。
+      placeholder: "0123456789abcdef0123456789abcdef01234567"
+    validations:
+      required: true
+
+  - type: textarea
+    id: rollback_procedure
+    attributes:
+      label: rollback手順
+      description: 実施者、切り戻し方法、確認方法を記載してください。secretや環境変数値は記載しないでください。
+      placeholder: |
+        1. 対象deployを停止する
+        2. rollback参照コミットを再deployする
+        3. 主要導線と規約ページを確認する
+    validations:
+      required: true
+
+  - type: input
+    id: post_deploy_checker
+    attributes:
+      label: deploy後確認担当者
+      description: Gate Bの本番実測を担当する人を入力してください。
+      placeholder: GitHubユーザー名または公開可能な担当者名
+    validations:
+      required: true
+
+  - type: input
+    id: post_deploy_deadline
+    attributes:
+      label: deploy後確認期限
+      description: deploy完了後、いつまでにGate Bを完了するか入力してください。
+      placeholder: deploy完了から30分以内
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deploy_go_decision
+    attributes:
+      label: Deploy-Go判定
+      description: 必須項目が1つでも未確認の場合はNo-Goを選択してください。
+      options:
+        - No-Go
+        - Go
+    validations:
+      required: true
+
+  - type: textarea
+    id: decision_reason
+    attributes:
+      label: 判定理由
+      description: GoまたはNo-Goの根拠と、残課題がある場合は再開条件を記載してください。
+    validations:
+      required: true
+
+  - type: input
+    id: decision_maker
+    attributes:
+      label: Deploy-Go判定者
+      description: 最終判定を行った人を入力してください。
+      placeholder: GitHubユーザー名または公開可能な担当者名
+    validations:
+      required: true
+
+  - type: input
+    id: decision_at
+    attributes:
+      label: Deploy-Go判定時刻（UTC）
+      description: ISO 8601形式で入力してください。
+      placeholder: "2026-07-23T09:30:00Z"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: release_boundary
+    attributes:
+      label: リリース境界の確認
+      options:
+        - label: Pull Requestのレビュー承認とDeploy-Go判定は別の手続きであることを確認しました。
+          required: true
+        - label: Gate AがGoでも、Gate B完了前は正式公開完了ではないことを確認しました。
+          required: true
+        - label: Gate AがNo-Goの場合は本番deployを実施しないことを確認しました。
+          required: true
+        - label: deploy後は指定期限内にGate Bを実施し、公開継続またはrollbackを判断することを確認しました。
+          required: true
