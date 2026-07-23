@@ -1,6 +1,8 @@
 name: release-preflight
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       target_sha:
@@ -12,7 +14,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: release-preflight-${{ inputs.target_sha || github.sha }}
+  group: release-preflight-${{ github.event.inputs.target_sha || github.sha }}
   cancel-in-progress: false
 
 jobs:
@@ -21,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      TARGET_SHA: ${{ inputs.target_sha || github.sha }}
+      TARGET_SHA: ${{ github.event.inputs.target_sha || github.sha }}
     steps:
       - name: 対象コミットSHAを検証
         shell: bash
